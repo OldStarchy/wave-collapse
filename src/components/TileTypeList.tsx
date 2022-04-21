@@ -1,0 +1,63 @@
+import { TileType as TileTypeModel } from '../model/TileType';
+import './TileTypeList.css';
+
+function TileTypeList({
+	tiles,
+	selectedTileType,
+	setSelectedTileType,
+}: {
+	tiles: TileTypeModel[];
+	selectedTileType: string | undefined;
+	setSelectedTileType: (tileType: string | undefined) => void;
+}) {
+	return (
+		<div
+			className="TileTypeList"
+			onClick={() => {
+				setSelectedTileType(undefined);
+			}}
+		>
+			{tiles.map((tile, i) => (
+				<TileType
+					key={i}
+					{...tile}
+					selected={selectedTileType === tile.name}
+					onClick={() => setSelectedTileType(tile.name)}
+				/>
+			))}
+		</div>
+	);
+}
+
+function TileType({
+	name,
+	images,
+	selected,
+	onClick,
+}: TileTypeModel & {
+	selected: boolean;
+	onClick: () => void;
+}) {
+	const image = images[0];
+	const classes = ['TileTypeList__Tile'];
+	if (selected) classes.push('TileTypeList__Tile--selected');
+
+	return (
+		<div
+			className={classes.join(' ')}
+			onClick={(e) => {
+				e.stopPropagation();
+				onClick();
+			}}
+		>
+			<div className="TileTypeList__Image">
+				<div className="TileTypeList__ImageContainer">
+					{image && <img src={image.src} alt={name} />}
+				</div>
+			</div>
+			<div className="TileTypeList__Name">{name}</div>
+		</div>
+	);
+}
+
+export default TileTypeList;

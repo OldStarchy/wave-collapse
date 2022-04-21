@@ -1,0 +1,42 @@
+.App {
+	width: 100vw;
+	height: 100vh;
+	display: grid;
+	grid-template-areas:
+		'MapView TileTypeList'
+		'TileEditor TileEditor'
+		'ProgressBar ProgressBar';
+	grid-template-columns: 1fr 200px;
+	grid-template-rows: 1fr 300px;
+	gap: 0.5rem;
+
+	justify-items: stretch;
+	align-items: stretch;
+
+	background-color: var(--color-background);
+}
+
+.App .MapView {
+	grid-area: MapView;
+	position: relative;
+	border: 1px solid var(--color-border);
+}
+
+.App .TileTypeList {
+	grid-area: TileTypeList;
+	position: relative;
+	border: 1px solid var(--color-border);
+}
+
+.App .TileEditor {
+	grid-area: TileEditor;
+	position: relative;
+}
+
+.App .ProgressBar {
+	grid-area: ProgressBar;
+	height: 1rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+}

@@ -1,5 +1,11 @@
-export interface TileType {
+import Side from '../Side';
+
+export default interface TileType {
 	name: string;
-	weight: number;
 	images: HTMLImageElement[];
+	canBeRotated: boolean;
+
+	connectionKeys: {
+		[side in typeof Side.sides[number]]: string;
+	};
 }

@@ -1,4 +1,4 @@
-import { TileType as TileTypeModel } from '../model/TileType';
+import { default as TileTypeModel } from '../model/TileType';
 import './TileTypeList.css';
 
 function TileTypeList({
@@ -6,7 +6,7 @@ function TileTypeList({
 	selectedTileType,
 	setSelectedTileType,
 }: {
-	tiles: TileTypeModel[];
+	tiles: Set<TileTypeModel>;
 	selectedTileType: string | undefined;
 	setSelectedTileType: (tileType: string | undefined) => void;
 }) {
@@ -17,7 +17,7 @@ function TileTypeList({
 				setSelectedTileType(undefined);
 			}}
 		>
-			{tiles.map((tile, i) => (
+			{Array.from(tiles).map((tile, i) => (
 				<TileType
 					key={i}
 					{...tile}

@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { Tile } from '../model/Tile';
-import { TileType } from '../model/TileType';
+import { useEffect, useMemo, useState } from 'react';
+import TileType from '../model/TileType';
+import Side from '../Side';
 import grass0 from '../tiles/grass0.png';
 import grass1 from '../tiles/grass1.png';
 import grass2 from '../tiles/grass2.png';
@@ -9,6 +9,7 @@ import sand1 from '../tiles/sand1.png';
 import sand2 from '../tiles/sand2.png';
 import sand3 from '../tiles/sand3.png';
 import sand4 from '../tiles/sand4.png';
+import WaveField from '../WaveField';
 import './App.css';
 import MapView from './MapView';
 import ProgressBar from './ProgressBar';
@@ -20,10 +21,10 @@ function App() {
 		string | undefined
 	>(undefined);
 
-	const [map, setMap] = useState<Tile[]>([]);
+	const tileTypes = useMemo(() => new Set<TileType>(), []);
+	const map = useMemo(() => new WaveField(tileTypes), []);
 
 	const [imageLoadProgress, setImageLoadProgress] = useState(0);
-	const [tileTypes, setTileTypes] = useState<TileType[]>([]);
 
 	useEffect(() => {
 		const loadImages = async () => {
@@ -52,15 +53,23 @@ function App() {
 				);
 			});
 			const loadedImages = await Promise.all(promises);
-			setTileTypes(
-				['sand', 'grass'].map((name) => ({
+
+			['sand', 'grass'].forEach((name) => {
+				tileTypes.add({
 					name,
-					weight: 1,
 					images: loadedImages
 						.filter((i) => i.name === name)
 						.map((i) => i.image),
-				}))
-			);
+					canBeRotated: false,
+					connectionKeys: {
+						[Side.TOP]: name,
+						[Side.BOTTOM]: name,
+						[Side.LEFT]: name,
+						[Side.RIGHT]: name,
+					},
+				});
+			});
+
 			setImageLoadProgress(1);
 		};
 		loadImages();
@@ -68,7 +77,9 @@ function App() {
 
 	const loading = imageLoadProgress < 1;
 
-	const selectedTile = tileTypes.find((t) => t.name === selectedTileType);
+	const selectedTile = Array.from(tileTypes).find(
+		(t) => t.name === selectedTileType
+	);
 	return (
 		<div className="App">
 			<MapView
@@ -76,17 +87,9 @@ function App() {
 				tileTypes={tileTypes}
 				onClickPosition={(x, y) => {
 					if (selectedTile) {
-						setMap((m) => {
-							return [
-								...m,
-								{
-									x,
-									y,
-									optionWeights: {
-										[selectedTile.name]: 1,
-									},
-								},
-							];
+						map.setTileState(x, y, {
+							tileType: selectedTile,
+							rotation: 0,
 						});
 					}
 				}}

@@ -1,7 +1,7 @@
 import { solid } from '@fortawesome/fontawesome-svg-core/import.macro';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useEffect, useState } from 'react';
-import { TileType } from '../model/TileType';
+import TileType from '../model/TileType';
 import Button from './Button';
 import './TileEditor.css';
 

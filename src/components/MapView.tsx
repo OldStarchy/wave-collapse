@@ -1,8 +1,8 @@
 import { solid } from '@fortawesome/fontawesome-svg-core/import.macro';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { createRef, useCallback, useEffect, useState } from 'react';
-import { Tile } from '../model/Tile';
-import { TileType } from '../model/TileType';
+import TileType from '../model/TileType';
+import WaveField from '../WaveField';
 import Button from './Button';
 import './MapView.css';
 
@@ -38,8 +38,8 @@ function MapView({
 	onClickPosition,
 	settings: _settings = {},
 }: {
-	map: Tile[];
-	tileTypes: TileType[];
+	map: WaveField;
+	tileTypes: Set<TileType>;
 	onClickPosition: (x: number, y: number) => void;
 	settings?: Partial<MapViewSettings>;
 }) {
@@ -212,29 +212,24 @@ function MapView({
 
 		//draw tiles
 		let renderedTiles = 0;
-		map.forEach(({ optionWeights, x, y }) => {
+		map.forEach(({ superState, x, y }) => {
 			if (x * TILE_SIZE < topLeft.x || x * TILE_SIZE > bottomRight.x)
 				return;
 			if (y * TILE_SIZE < topLeft.y || y * TILE_SIZE > bottomRight.y)
 				return;
 
 			renderedTiles++;
-			Object.keys(optionWeights).forEach((option) => {
-				const weight = optionWeights[option];
-				if (weight === 0) return;
-
-				const tile = tileTypes.find((t) => t.name === option);
-				if (!tile) return;
-
+			superState.forEach(({ tileType, rotation }) => {
 				//psudorandom based on x and y
-				const imageIndex = (randomFrom2(x, y) * tile.images.length) | 0;
-				ctx.drawImage(
-					tile.images[imageIndex],
-					x * TILE_SIZE,
-					y * TILE_SIZE,
-					TILE_SIZE,
-					TILE_SIZE
-				);
+				const imageIndex =
+					(randomFrom2(x, y) * tileType.images.length) | 0;
+				const image = tileType.images[imageIndex];
+
+				ctx.save();
+				ctx.translate(x * TILE_SIZE, y * TILE_SIZE);
+				ctx.rotate(rotation);
+				ctx.drawImage(image, 0, 0, TILE_SIZE, TILE_SIZE);
+				ctx.restore();
 			});
 		});
 		console.log(renderedTiles);

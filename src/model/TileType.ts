@@ -6,6 +6,6 @@ export default interface TileType {
 	canBeRotated: boolean;
 
 	connectionKeys: {
-		[side in typeof Side.sides[number]]: string;
+		[side in typeof Side.sides[number]]: string | null;
 	};
 }

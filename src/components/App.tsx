@@ -63,23 +63,25 @@ function App() {
 			}}
 		>
 			<DragContext.Provider value={{ isDragging: dragCounter > 0 }}>
-				<MapView
-					map={map}
-					onClickPosition={(x, y) => {
-						if (selectedTile) {
-							map.setTileState(x, y, {
-								tileType: selectedTile,
-								rotation: 0,
-							});
-						}
-					}}
-				/>
-				<TileTypeList
-					tiles={tileTypes}
-					selectedTileType={selectedTileType}
-					setSelectedTileType={setSelectedTileType}
-				/>
-				<TileEditor tile={selectedTile} />
+				<div className="App__Content">
+					<MapView
+						map={map}
+						onClickPosition={(x, y) => {
+							if (selectedTile) {
+								map.setTileState(x, y, {
+									tileType: selectedTile,
+									rotation: 0,
+								});
+							}
+						}}
+					/>
+					<TileTypeList
+						tiles={tileTypes}
+						selectedTileType={selectedTileType}
+						setSelectedTileType={setSelectedTileType}
+					/>
+					<TileEditor tile={selectedTile} />
+				</div>
 				{loading && <ProgressBar progress={imageLoadProgress} />}
 			</DragContext.Provider>
 		</div>

@@ -1,0 +1,42 @@
+.ConnectionSelector {
+	display: flex;
+	align-items: center;
+}
+
+.ConnectionSelector__Value {
+	flex-grow: 1;
+	position: relative;
+	display: flex;
+	border: 1px solid var(--color-border);
+	padding: 0.5rem;
+}
+.ConnectionSelector__Button {
+	flex-grow: 1;
+	display: flex;
+	cursor: pointer;
+}
+.ConnectionSelector__Button__Text {
+	flex-grow: 1;
+}
+
+.ConnectionSelector__Menu {
+	position: absolute;
+	top: 100%;
+	/* TODO: don't hardcode border size? */
+	left: -1px;
+	width: calc(100% + 2px);
+	z-index: 1;
+	background-color: var(--color-background);
+	border: 1px solid var(--color-border);
+	padding: 0.5rem 0;
+	overflow-y: scroll;
+}
+
+.ConnectionSelector__MenuItem {
+	padding: 0.5rem;
+	cursor: pointer;
+}
+
+.ConnectionSelector__MenuItem:hover {
+	background-color: var(--color-highlight-background);
+}

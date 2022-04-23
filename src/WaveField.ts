@@ -167,6 +167,7 @@ class WaveField {
 
 					const connectionKey =
 						state.tileType.connectionKeys[localSide];
+					if (connectionKey !== null)
 					allowedConnectionKeys.add(connectionKey);
 				}
 
@@ -194,7 +195,10 @@ class WaveField {
 							localBackDirection
 						];
 
-					if (!allowedConnectionKeys.has(connectionKey)) {
+					if (
+						connectionKey === null ||
+						!allowedConnectionKeys.has(connectionKey)
+					) {
 						connectedTile.superState.splice(index, 1);
 						modifiedTiles.set(backDirection, connectedTile);
 					}

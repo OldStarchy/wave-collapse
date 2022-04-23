@@ -1,9 +1,12 @@
 import { solid } from '@fortawesome/fontawesome-svg-core/import.macro';
-import { createRef, useEffect, useState } from 'react';
+import React, { createRef, useEffect, useState } from 'react';
 import DragContext from '../context/DragContext';
 import TileType from '../model/TileType';
+import Side from '../Side';
+import ConnectionSelector from './ConnectionSelector';
 import FontAwesomeButton from './FontAwesomeButton';
 import Hidden from './Hidden';
+import TabbedPanel from './TabbedPanel';
 import './TileEditor.css';
 
 function TileEditor({ tile }: { tile: TileType | undefined }) {
@@ -76,55 +79,106 @@ function TileEditor({ tile }: { tile: TileType | undefined }) {
 				</div>
 			</div>
 			<div className="TileEditor__Name">{tile && tile.name}</div>
-			<DragContext.Consumer>
-				{({ isDragging }) => (
-					<div className="TileImageSelector">
-						{isDragging ? (
-							<div
-								className={`TileImageSelector__DropZone ${
-									isDraggingOver
-										? 'TileImageSelector__DropZone--isDraggingOver'
-										: ''
-								}`}
-								onDrop={handleDrop}
-								onDragOver={handleDragOver}
-								onDragEnter={() => setIsDraggingOver(true)}
-								onDragLeave={() => setIsDraggingOver(false)}
-							>
-								Drop images here
-							</div>
-						) : (
-							<div className="TileImageSelector__Images">
-								{tile.images.map((image, i) => (
-									<div
-										className={`TileImageSelector__Image ${
-											i === selectedImage &&
-											'TileImageSelector__Image--selected'
-										}`}
-										key={i}
-										onClick={() => setSelectedImage(i)}
-									>
-										<div className="TileImageSelector__ImageContainer">
-											<img
-												src={image.src}
-												alt={tile.name}
+			<TabbedPanel defaultTab="Images" className="TileEditor__Properties">
+				{{
+					Images: (
+						<div className="TileImageSelector" key={tile.name}>
+							<DragContext.Consumer>
+								{({ isDragging }) =>
+									isDragging ? (
+										<div
+											className={`TileImageSelector__DropZone ${
+												isDraggingOver
+													? 'TileImageSelector__DropZone--isDraggingOver'
+													: ''
+											}`}
+											onDrop={handleDrop}
+											onDragOver={handleDragOver}
+											onDragEnter={() =>
+												setIsDraggingOver(true)
+											}
+											onDragLeave={() =>
+												setIsDraggingOver(false)
+											}
+										>
+											Drop images here
+										</div>
+									) : (
+										<div className="TileImageSelector__Images">
+											{tile.images.map((image, i) => (
+												<div
+													className={`TileImageSelector__Image ${
+														i === selectedImage &&
+														'TileImageSelector__Image--selected'
+													}`}
+													key={i}
+													onClick={() =>
+														setSelectedImage(i)
+													}
+												>
+													<div className="TileImageSelector__ImageContainer">
+														<img
+															src={image.src}
+															alt={tile.name}
+														/>
+													</div>
+												</div>
+											))}
+
+											<FontAwesomeButton
+												className="TileImageSelector__AddNew"
+												icon={solid('plus')}
+												onClick={() => {
+													uploadFieldRef.current!.click();
+												}}
 											/>
 										</div>
-									</div>
-								))}
-
-								<FontAwesomeButton
-									className="TileImageSelector__AddNew"
-									icon={solid('plus')}
-									onClick={() => {
-										uploadFieldRef.current!.click();
-									}}
-								/>
-							</div>
-						)}
-					</div>
-				)}
-			</DragContext.Consumer>
+									)
+								}
+							</DragContext.Consumer>
+						</div>
+					),
+					Connections: (
+						<div
+							className="TileEditor__Connections"
+							key={tile.name}
+						>
+							<ConnectionSelector
+								label="Right"
+								value={tile.connectionKeys[Side.RIGHT]}
+								onChange={(value) => {
+									//TODO: Don't mutate props
+									tile.connectionKeys[Side.RIGHT] = value;
+								}}
+							/>
+							<ConnectionSelector
+								label="Top"
+								value={tile.connectionKeys[Side.TOP]}
+								onChange={(value) => {
+									//TODO: Don't mutate props
+									tile.connectionKeys[Side.TOP] = value;
+								}}
+							/>
+							<ConnectionSelector
+								label="Left"
+								value={tile.connectionKeys[Side.LEFT]}
+								onChange={(value) => {
+									//TODO: Don't mutate props
+									tile.connectionKeys[Side.LEFT] = value;
+								}}
+							/>
+							<ConnectionSelector
+								label="Bottom"
+								value={tile.connectionKeys[Side.BOTTOM]}
+								onChange={(value) => {
+									//TODO: Don't mutate props
+									tile.connectionKeys[Side.BOTTOM] = value;
+								}}
+							/>
+						</div>
+					),
+				}}
+			</TabbedPanel>
 			<Hidden>
 				<input
 					ref={uploadFieldRef}

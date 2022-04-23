@@ -34,13 +34,24 @@
 	image-rendering: pixelated;
 }
 
-.TileEditor .TileImageSelector {
+.TileEditor__Properties {
 	grid-area: images;
 }
 
-.TileImageSelector {
-	border: 1px solid var(--color-border);
+.TileEditor__Connections {
+	padding: 0.5rem;
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: 0.5rem;
+	align-content: flex-start;
+	align-items: center;
+}
 
+.TileEditor__Connections .ConnectionSelector {
+	display: contents;
+}
+
+.TileImageSelector {
 	display: grid;
 	justify-content: stretch;
 	align-items: stretch;

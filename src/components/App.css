@@ -1,19 +1,31 @@
 .App {
 	width: 100vw;
 	height: 100vh;
+
+	display: grid;
+	grid-template-areas:
+		'Content'
+		'ProgressBar';
+	grid-template-rows: 1fr auto;
+
+	justify-items: stretch;
+	align-items: stretch;
+
+	background-color: var(--color-background);
+}
+
+.App__Content {
+	grid-area: Content;
 	display: grid;
 	grid-template-areas:
 		'MapView TileTypeList'
-		'TileEditor TileEditor'
-		'ProgressBar ProgressBar';
+		'TileEditor TileEditor';
 	grid-template-columns: 1fr 300px;
 	grid-template-rows: 1fr 300px;
 	gap: 0.5rem;
 
 	justify-items: stretch;
 	align-items: stretch;
-
-	background-color: var(--color-background);
 }
 
 .App .MapView {

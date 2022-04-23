@@ -1,7 +1,6 @@
 import { solid } from '@fortawesome/fontawesome-svg-core/import.macro';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { createRef, useCallback, useEffect, useState } from 'react';
-import TileType from '../model/TileType';
 import WaveField from '../WaveField';
 import Button from './Button';
 import './MapView.css';
@@ -34,12 +33,10 @@ function randomFrom2(x: number, y: number) {
 
 function MapView({
 	map,
-	tileTypes,
 	onClickPosition,
 	settings: _settings = {},
 }: {
 	map: WaveField;
-	tileTypes: Set<TileType>;
 	onClickPosition: (x: number, y: number) => void;
 	settings?: Partial<MapViewSettings>;
 }) {

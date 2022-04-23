@@ -1,6 +1,7 @@
 import { solid } from '@fortawesome/fontawesome-svg-core/import.macro';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { createRef, useEffect, useState } from 'react';
+import DragContext from '../context/DragContext';
 import TileType from '../model/TileType';
 import Button from './Button';
 import Hidden from './Hidden';
@@ -11,36 +12,56 @@ function TileEditor({ tile }: { tile: TileType | undefined }) {
 	const [, _rerender] = useState({});
 	const rerender = () => _rerender({});
 
+	const [isDraggingOver, setIsDraggingOver] = useState(false);
+
 	useEffect(() => {
 		setSelectedImage(0);
 	}, [tile]);
 
 	const uploadFieldRef = createRef<HTMLInputElement>();
 
+	async function loadImages(files: FileList) {
+		const promises = Array.from(files).map((file) => {
+			return new Promise<HTMLImageElement>((resolve, reject) => {
+				if (file.type.startsWith('image/')) {
+					const image = new Image();
+					image.src = URL.createObjectURL(file);
+					image.onload = () => {
+						resolve(image);
+					};
+					image.onerror = () => {
+						reject(file);
+					};
+				} else {
+					reject(file);
+				}
+			});
+		});
+
+		//TODO: don't mutate props
+		const images = await Promise.all(promises);
+
+		tile?.images.push(...images);
+		rerender();
+	}
+
 	const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
 		const files = event.target.files;
 		if (files) {
-			const promises = Array.from(files).map((file) => {
-				return new Promise<HTMLImageElement>((resolve, reject) => {
-					if (file.type.startsWith('image/')) {
-						const image = new Image();
-						image.src = URL.createObjectURL(file);
-						image.onload = () => {
-							resolve(image);
-						};
-						image.onerror = () => {
-							reject(file);
-						};
-					} else {
-						reject(file);
-					}
-				});
-			});
-			Promise.all(promises).then((images) => {
-				tile?.images.push(...images);
-				rerender();
-			});
+			loadImages(files);
 		}
+	};
+
+	const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+		event.preventDefault();
+		const files = event.dataTransfer.files;
+		if (files) {
+			loadImages(files);
+		}
+	};
+
+	const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+		event.preventDefault();
 	};
 
 	return tile ? (
@@ -56,31 +77,56 @@ function TileEditor({ tile }: { tile: TileType | undefined }) {
 				</div>
 			</div>
 			<div className="TileEditor__Name">{tile && tile.name}</div>
-			<div className="TileImageSelector">
-				{tile.images.map((image, i) => (
-					<div
-						className={`TileImageSelector__Image ${
-							i === selectedImage &&
-							'TileImageSelector__Image--selected'
-						}`}
-						key={i}
-						onClick={() => setSelectedImage(i)}
-					>
-						<div className="TileImageSelector__ImageContainer">
-							<img src={image.src} alt={tile.name} />
-						</div>
-					</div>
-				))}
+			<DragContext.Consumer>
+				{({ isDragging }) => (
+					<div className="TileImageSelector">
+						{isDragging ? (
+							<div
+								className={`TileImageSelector__DropZone ${
+									isDraggingOver
+										? 'TileImageSelector__DropZone--isDraggingOver'
+										: ''
+								}`}
+								onDrop={handleDrop}
+								onDragOver={handleDragOver}
+								onDragEnter={() => setIsDraggingOver(true)}
+								onDragLeave={() => setIsDraggingOver(false)}
+							>
+								Drop images here
+							</div>
+						) : (
+							<div className="TileImageSelector__Images">
+								{tile.images.map((image, i) => (
+									<div
+										className={`TileImageSelector__Image ${
+											i === selectedImage &&
+											'TileImageSelector__Image--selected'
+										}`}
+										key={i}
+										onClick={() => setSelectedImage(i)}
+									>
+										<div className="TileImageSelector__ImageContainer">
+											<img
+												src={image.src}
+												alt={tile.name}
+											/>
+										</div>
+									</div>
+								))}
 
-				<Button
-					className="TileImageSelector__AddNew"
-					onClick={() => {
-						uploadFieldRef.current!.click();
-					}}
-				>
-					<FontAwesomeIcon icon={solid('plus')} />
-				</Button>
-			</div>
+								<Button
+									className="TileImageSelector__AddNew"
+									onClick={() => {
+										uploadFieldRef.current!.click();
+									}}
+								>
+									<FontAwesomeIcon icon={solid('plus')} />
+								</Button>
+							</div>
+						)}
+					</div>
+				)}
+			</DragContext.Consumer>
 			<Hidden>
 				<input
 					ref={uploadFieldRef}

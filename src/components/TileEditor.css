@@ -34,17 +34,27 @@
 	image-rendering: pixelated;
 }
 
-.TileImageSelector {
+.TileEditor .TileImageSelector {
 	grid-area: images;
+}
+
+.TileImageSelector {
+	border: 1px solid var(--color-border);
+
+	display: grid;
+	justify-content: stretch;
+	align-items: stretch;
+}
+
+.TileImageSelector__Images {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(3rem, 1fr));
 	align-content: flex-start;
 	overflow-y: scroll;
-	gap: 0.5rem;
 	padding: 0.5rem;
-
-	border: 1px solid var(--color-border);
+	gap: 0.5rem;
 }
+
 .TileImageSelector__ImageContainer > img {
 	width: 100%;
 	max-width: 3rem;
@@ -66,5 +76,17 @@
 
 .TileImageSelector__Image--selected {
 	border-color: var(--color-border);
+	background-color: var(--color-highlight-background);
+}
+
+.TileImageSelector__DropZone {
+	margin: 0.5rem;
+	display: grid;
+	justify-content: center;
+	align-items: center;
+	border: 1px dashed var(--color-border);
+}
+
+.TileImageSelector__DropZone--isDraggingOver {
 	background-color: var(--color-highlight-background);
 }

@@ -35,6 +35,10 @@ class WaveField {
 		}
 	}
 
+	public getDefaultSuperState() {
+		return Array.from(this.getDefaultTileState());
+	}
+
 	public clear() {
 		this.field.clear();
 	}

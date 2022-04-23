@@ -7,7 +7,7 @@ import './MapView.css';
 const TILE_SIZE = 32;
 
 const MAX_ZOOM = 4;
-const MIN_ZOOM = 0.25;
+const MIN_ZOOM = 0.5;
 const ZOOM_FACTOR = 0.2;
 
 const TRANSLATE_CONTROLS = {
@@ -173,14 +173,14 @@ function MapView({
 			y: canvas.height,
 		});
 
+		topLeft.x = Math.floor(topLeft.x / TILE_SIZE) * TILE_SIZE;
+		topLeft.y = Math.floor(topLeft.y / TILE_SIZE) * TILE_SIZE;
+
 		//draw grid
 		if (settings.drawGrid) {
 			ctx.strokeStyle = cssVar('--color-grid');
 			ctx.lineWidth = 1;
 			ctx.beginPath();
-
-			topLeft.x = Math.floor(topLeft.x / TILE_SIZE) * TILE_SIZE;
-			topLeft.y = Math.floor(topLeft.y / TILE_SIZE) * TILE_SIZE;
 
 			for (let x = topLeft.x; x < bottomRight.x; x += TILE_SIZE) {
 				ctx.moveTo(x, topLeft.y);
@@ -208,27 +208,59 @@ function MapView({
 
 		//draw tiles
 		let renderedTiles = 0;
-		map.forEach(({ superState, x, y }) => {
-			if (x * TILE_SIZE < topLeft.x || x * TILE_SIZE > bottomRight.x)
-				return;
-			if (y * TILE_SIZE < topLeft.y || y * TILE_SIZE > bottomRight.y)
-				return;
+		const defaultSuperState = map.getDefaultSuperState();
+		for (let x = topLeft.x; x < bottomRight.x; x += TILE_SIZE) {
+			for (let y = topLeft.y; y < bottomRight.y; y += TILE_SIZE) {
+				const superState =
+					map.getTile(x / TILE_SIZE, y / TILE_SIZE)?.superState ??
+					defaultSuperState;
 
-			renderedTiles++;
-			superState.forEach(({ tileType, rotation }) => {
-				//psudorandom based on x and y
-				const imageIndex =
-					(randomFrom2(x, y) * tileType.images.length) | 0;
-				const image = tileType.images[imageIndex];
+				// map.forEach(({ superState, x, y }) => {
+				// 	if (x * TILE_SIZE < topLeft.x || x * TILE_SIZE > bottomRight.x)
+				// 		return;
+				// 	if (y * TILE_SIZE < topLeft.y || y * TILE_SIZE > bottomRight.y)
+				// 		return;
 
-				ctx.save();
-				ctx.translate(x * TILE_SIZE, y * TILE_SIZE);
-				ctx.rotate(rotation);
-				ctx.drawImage(image, 0, 0, TILE_SIZE, TILE_SIZE);
-				ctx.restore();
-			});
-		});
-		console.log(renderedTiles);
+				renderedTiles++;
+				superState.forEach(({ tileType, rotation }, i) => {
+					//psudorandom based on x and y
+					if (tileType.images.length === 0) {
+						ctx.beginPath();
+						ctx.arc(
+							x + 0.5 * TILE_SIZE,
+							y + 0.5 * TILE_SIZE,
+							0.5 * 0.5 * TILE_SIZE,
+							0,
+							2 * Math.PI
+						);
+						//random color based off tile name
+						ctx.fillStyle =
+							'#' +
+							Math.abs(stringHash(tileType.name))
+								.toString(16)
+								.substring(0, 6) +
+							((255 / (i + 1)) | 0).toString(16);
+						ctx.strokeStyle = cssVar('--color-border');
+						// ctx.stroke();
+						ctx.fill();
+					} else {
+						const imageIndex =
+							(randomFrom2(x, y) * tileType.images.length) | 0;
+						const image = tileType.images[imageIndex];
+
+						ctx.save();
+						ctx.translate(x, y);
+						ctx.rotate(rotation);
+						ctx.globalAlpha = 1 / (i + 1);
+						ctx.drawImage(image, 0, 0, TILE_SIZE, TILE_SIZE);
+						ctx.restore();
+					}
+				});
+				// });
+			}
+		}
+		//TODO: report renderedTiles to diagnostics
+		// console.log(renderedTiles);
 
 		//highlight tile under mouse
 		if (mousePosition) {
@@ -389,3 +421,9 @@ function MapView({
 }
 
 export default MapView;
+
+const stringHash = (s: string) => {
+	for (var i = 0, h = 9; i < s.length; )
+		h = Math.imul(h ^ s.charCodeAt(i++), 9 ** 9);
+	return h ^ (h >>> 9);
+};

@@ -1,9 +1,8 @@
 import { solid } from '@fortawesome/fontawesome-svg-core/import.macro';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { createRef, useEffect, useState } from 'react';
 import DragContext from '../context/DragContext';
 import TileType from '../model/TileType';
-import Button from './Button';
+import FontAwesomeButton from './FontAwesomeButton';
 import Hidden from './Hidden';
 import './TileEditor.css';
 
@@ -114,14 +113,13 @@ function TileEditor({ tile }: { tile: TileType | undefined }) {
 									</div>
 								))}
 
-								<Button
+								<FontAwesomeButton
 									className="TileImageSelector__AddNew"
+									icon={solid('plus')}
 									onClick={() => {
 										uploadFieldRef.current!.click();
 									}}
-								>
-									<FontAwesomeIcon icon={solid('plus')} />
-								</Button>
+								/>
 							</div>
 						)}
 					</div>

@@ -70,9 +70,6 @@
 	cursor: pointer;
 	transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
 }
-.TileImageSelector__AddNew {
-	aspect-ratio: 1 / 1;
-}
 
 .TileImageSelector__Image--selected {
 	border-color: var(--color-border);

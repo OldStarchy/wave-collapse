@@ -1,8 +1,7 @@
 import { solid } from '@fortawesome/fontawesome-svg-core/import.macro';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { createRef, useCallback, useEffect, useState } from 'react';
 import WaveField from '../WaveField';
-import Button from './Button';
+import FontAwesomeButton from './FontAwesomeButton';
 import './MapView.css';
 
 const TILE_SIZE = 32;
@@ -328,55 +327,59 @@ function MapView({
 				}}
 			></canvas>
 			<div className="MapView__Controls MapView__Controls--Top">
-				<Button className="MapView__Control">
-					<FontAwesomeIcon icon={solid('save')} />
-				</Button>
-				<Button className="MapView__Control">
-					<FontAwesomeIcon icon={solid('folder')} />
-				</Button>
-				<Button className="MapView__Control">
-					<FontAwesomeIcon icon={solid('image')} />
-				</Button>
+				<FontAwesomeButton
+					className="MapView__Control"
+					icon={solid('save')}
+				/>
+				<FontAwesomeButton
+					className="MapView__Control"
+					icon={solid('folder')}
+				/>
+				<FontAwesomeButton
+					className="MapView__Control"
+					icon={solid('image')}
+				/>
 
 				<div></div>
-				<Button className="MapView__Control">
-					<FontAwesomeIcon icon={solid('trash')} />
-				</Button>
+
+				<FontAwesomeButton
+					className="MapView__Control"
+					icon={solid('trash')}
+				/>
 
 				<div></div>
 
-				<Button className="MapView__Control">
-					<FontAwesomeIcon icon={solid('play')} />
-				</Button>
-				<Button className="MapView__Control">
-					<FontAwesomeIcon icon={solid('fast-forward')} />
-				</Button>
+				<FontAwesomeButton
+					className="MapView__Control"
+					icon={solid('play')}
+				/>
+				<FontAwesomeButton
+					className="MapView__Control"
+					icon={solid('fast-forward')}
+				/>
 			</div>
 			<div className="MapView__Controls MapView__Controls--Side">
-				<Button
+				<FontAwesomeButton
 					className="MapView__Control"
+					icon={solid('plus')}
 					onClick={() => {
 						setZoom(zoom * 2 ** ZOOM_FACTOR);
 					}}
-				>
-					<FontAwesomeIcon icon={solid('plus')} />
-				</Button>
-				<Button
+				/>
+				<FontAwesomeButton
 					className="MapView__Control"
+					icon={solid('minus')}
 					onClick={() => {
 						setZoom(zoom * 2 ** -ZOOM_FACTOR);
 					}}
-				>
-					<FontAwesomeIcon icon={solid('minus')} />
-				</Button>
-				<Button
+				/>
+				<FontAwesomeButton
 					className="MapView__Control"
+					icon={solid('sync-alt')}
 					onClick={() => {
 						setZoom(1);
 					}}
-				>
-					<FontAwesomeIcon icon={solid('sync-alt')} />
-				</Button>
+				/>
 			</div>
 		</div>
 	);

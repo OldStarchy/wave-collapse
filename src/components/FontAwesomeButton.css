@@ -1,0 +1,6 @@
+.FontAwesomeButton {
+	display: flex;
+	aspect-ratio: 1;
+	justify-content: center;
+	align-items: center;
+}

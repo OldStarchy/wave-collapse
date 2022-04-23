@@ -35,6 +35,10 @@ class WaveField {
 		}
 	}
 
+	public clear() {
+		this.field.clear();
+	}
+
 	public getTile(x: number, y: number): Tile | undefined {
 		const key = `${x}-${y}` as const;
 

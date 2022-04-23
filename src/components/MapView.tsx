@@ -345,6 +345,9 @@ function MapView({
 				<FontAwesomeButton
 					className="MapView__Control"
 					icon={solid('trash')}
+					onClick={() => {
+						map.clear();
+					}}
 				/>
 
 				<div></div>

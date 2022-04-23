@@ -79,6 +79,19 @@ function App() {
 						tiles={tileTypes}
 						selectedTileType={selectedTileType}
 						setSelectedTileType={setSelectedTileType}
+						onAddTileButtonClick={() => {
+							tileTypes.add({
+								name: `tile${tileTypes.size}`,
+								images: [],
+								canBeRotated: false,
+								connectionKeys: {
+									[Side.TOP]: 'grass',
+									[Side.BOTTOM]: 'grass',
+									[Side.LEFT]: 'grass',
+									[Side.RIGHT]: 'grass',
+								},
+							});
+						}}
 					/>
 					<TileEditor tile={selectedTile} />
 				</div>

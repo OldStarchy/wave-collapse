@@ -1,6 +1,14 @@
 .TileTypeList {
 	padding: 0.5rem;
 	overflow-y: scroll;
+	display: grid;
+	align-content: flex-start;
+	gap: 0.5rem;
+}
+
+.TileTypeList__AddNew {
+	aspect-ratio: auto;
+	height: 4rem;
 }
 
 .TileTypeList__Tile {

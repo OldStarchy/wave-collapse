@@ -1,14 +1,18 @@
+import { solid } from '@fortawesome/fontawesome-svg-core/import.macro';
 import { default as TileTypeModel } from '../model/TileType';
+import FontAwesomeButton from './FontAwesomeButton';
 import './TileTypeList.css';
 
 function TileTypeList({
 	tiles,
 	selectedTileType,
 	setSelectedTileType,
+	onAddTileButtonClick,
 }: {
 	tiles: Set<TileTypeModel>;
 	selectedTileType: string | undefined;
 	setSelectedTileType: (tileType: string | undefined) => void;
+	onAddTileButtonClick: () => void;
 }) {
 	return (
 		<div
@@ -25,6 +29,12 @@ function TileTypeList({
 					onClick={() => setSelectedTileType(tile.name)}
 				/>
 			))}
+
+			<FontAwesomeButton
+				icon={solid('plus')}
+				className="TileTypeList__AddNew"
+				onClick={onAddTileButtonClick}
+			/>
 		</div>
 	);
 }

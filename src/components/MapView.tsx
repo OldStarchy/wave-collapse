@@ -456,6 +456,7 @@ function MapView({
 					onClick={() => {
 						setZoom(zoom * 2 ** ZOOM_FACTOR);
 					}}
+					disabled={zoom >= MAX_ZOOM}
 					title="Zoom in"
 				/>
 				<FontAwesomeButton
@@ -464,6 +465,7 @@ function MapView({
 					onClick={() => {
 						setZoom(zoom * 2 ** -ZOOM_FACTOR);
 					}}
+					disabled={zoom <= MIN_ZOOM}
 					title="Zoom out"
 				/>
 				<FontAwesomeButton
@@ -472,6 +474,7 @@ function MapView({
 					onClick={() => {
 						setZoom(1);
 					}}
+					disabled={zoom === 1}
 					title="Reset zoom"
 				/>
 			</div>

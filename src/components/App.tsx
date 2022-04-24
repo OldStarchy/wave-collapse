@@ -30,7 +30,7 @@ function App() {
 
 	useEffect(() => {
 		setIsPlaying(false);
-	}, [map]);
+	}, [map, tileTypes]);
 
 	useEffect(() => {
 		let timeout: number | undefined;
@@ -95,8 +95,10 @@ function App() {
 							setIsPlaying((isPlaying) => !isPlaying);
 						}}
 						onClearButtonClick={() => {
-							map.clear();
-							setIsPlaying(false);
+							if (window.confirm('Are you sure?')) {
+								map.clear();
+								setIsPlaying(false);
+							}
 						}}
 						//TODO: This should be done via context
 						isPlaying={isPlaying}
@@ -106,20 +108,27 @@ function App() {
 						selectedTileType={selectedTileType}
 						setSelectedTileType={setSelectedTileType}
 						onAddTileButtonClick={() => {
-							setTileTypes((types) => [
-								...types,
-								{
-									name: `tile${types.length}`,
-									images: [],
-									canBeRotated: false,
-									connectionKeys: {
-										[Side.TOP]: 'grass',
-										[Side.BOTTOM]: 'grass',
-										[Side.LEFT]: 'grass',
-										[Side.RIGHT]: 'grass',
+							if (
+								map.isEmpty() ||
+								window.confirm(
+									'This will clear the map. Continue?'
+								)
+							) {
+								setTileTypes((types) => [
+									...types,
+									{
+										name: `tile${types.length}`,
+										images: [],
+										canBeRotated: false,
+										connectionKeys: {
+											[Side.TOP]: 'grass',
+											[Side.BOTTOM]: 'grass',
+											[Side.LEFT]: 'grass',
+											[Side.RIGHT]: 'grass',
+										},
 									},
-								},
-							]);
+								]);
+							}
 						}}
 					/>
 					<TileEditor tile={selectedTile} />

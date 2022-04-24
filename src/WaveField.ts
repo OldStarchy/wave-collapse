@@ -93,6 +93,12 @@ class WaveField {
 			return;
 		}
 
+		for (const side of Side.sides) {
+			const offset = Side.offset[side];
+			const otherTile = this.getTile(x + offset.x, y + offset.y);
+			if (otherTile) this.propagateState(otherTile, undefined, 4);
+		}
+
 		const weightedStates: [TileState, number][] = [];
 		let totalWeight = 0;
 

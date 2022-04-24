@@ -103,6 +103,7 @@ function App() {
 						//TODO: This should be done via context
 						isPlaying={isPlaying}
 					/>
+					{/* TODO: make the tile editor and tile type list collapsible to make map view bigger */}
 					<TileTypeList
 						tiles={new Set(tileTypes)}
 						selectedTileType={selectedTileType}

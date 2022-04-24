@@ -18,7 +18,7 @@ function App() {
 	const map = useMemo(() => new WaveField(new Set(tileTypes)), [tileTypes]);
 
 	const [dragCounter, setDragCounter] = useState(0);
-	const [imageLoadProgress, setImageLoadProgress] = useState(0);
+	const [imageLoadProgress, setImageLoadProgress] = useState(1);
 
 	const [isPlaying, setIsPlaying] = useState(false);
 
@@ -131,7 +131,10 @@ function App() {
 							}
 						}}
 					/>
-					<TileEditor tile={selectedTile} />
+					<TileEditor
+						tile={selectedTile}
+						hasOtherTiles={tileTypes.length > 0}
+					/>
 				</div>
 				{loading && <ProgressBar progress={imageLoadProgress} />}
 			</DragContext.Provider>

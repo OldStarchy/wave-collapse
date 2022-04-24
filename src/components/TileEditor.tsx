@@ -9,7 +9,14 @@ import Hidden from './Hidden';
 import TabbedPanel from './TabbedPanel';
 import './TileEditor.css';
 
-function TileEditor({ tile }: { tile: TileType | undefined }) {
+function TileEditor({
+	tile,
+	//TODO: Move this to context
+	hasOtherTiles,
+}: {
+	tile: TileType | undefined;
+	hasOtherTiles: boolean;
+}) {
 	const [selectedImage, setSelectedImage] = useState<number>(0);
 	const [, _rerender] = useState({});
 	const rerender = useCallback(() => _rerender({}), [_rerender]);
@@ -256,7 +263,16 @@ function TileEditor({ tile }: { tile: TileType | undefined }) {
 			</Hidden>
 		</div>
 	) : (
-		<div className="TileEditor TileEditor--Empty">Hi 😊</div>
+		<div className="TileEditor TileEditor--Empty">
+			{!hasOtherTiles ? (
+				<>Add a new tile type on the right to begin. 😊</>
+			) : (
+				<>
+					Now select a tile to add images and configure which
+					connections it has. 😊
+				</>
+			)}
+		</div>
 	);
 }
 

@@ -34,6 +34,7 @@ function TileTypeList({
 				icon={solid('plus')}
 				className="TileTypeList__AddNew"
 				onClick={onAddTileButtonClick}
+				title="Add new tile type"
 			/>
 		</div>
 	);

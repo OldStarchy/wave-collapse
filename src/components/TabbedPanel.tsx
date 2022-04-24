@@ -27,6 +27,7 @@ function TabbedPanel<
 						}`}
 						key={tab}
 						onClick={() => setActiveTab(tab as keyof TTabs)}
+						title={undefined}
 					>
 						{tab}
 					</Button>

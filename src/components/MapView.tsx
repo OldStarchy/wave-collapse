@@ -406,14 +406,20 @@ function MapView({
 				<FontAwesomeButton
 					className="MapView__Control"
 					icon={solid('save')}
+					title="Save map (not yet implemented)"
+					disabled
 				/>
 				<FontAwesomeButton
 					className="MapView__Control"
 					icon={solid('folder')}
+					title="Open map (not yet implemented)"
+					disabled
 				/>
 				<FontAwesomeButton
 					className="MapView__Control"
 					icon={solid('image')}
+					title="Export map (not yet implemented)"
+					disabled
 				/>
 
 				<div></div>
@@ -422,6 +428,8 @@ function MapView({
 					className="MapView__Control"
 					icon={solid('trash')}
 					onClick={onClearButtonClick}
+					title="Clear map"
+					disabled={map.isEmpty()}
 				/>
 
 				<div></div>
@@ -431,12 +439,14 @@ function MapView({
 					icon={solid('forward-step')}
 					onClick={onStepButtonClick}
 					disabled={map.tileset.size === 0}
+					title="Step"
 				/>
 				<FontAwesomeButton
 					className="MapView__Control"
 					icon={isPlaying ? solid('pause') : solid('play')}
 					onClick={onPlayButtonClick}
 					disabled={map.tileset.size === 0}
+					title={isPlaying ? 'Pause' : 'Play'}
 				/>
 			</div>
 			<div className="MapView__Controls MapView__Controls--Side">
@@ -446,6 +456,7 @@ function MapView({
 					onClick={() => {
 						setZoom(zoom * 2 ** ZOOM_FACTOR);
 					}}
+					title="Zoom in"
 				/>
 				<FontAwesomeButton
 					className="MapView__Control"
@@ -453,6 +464,7 @@ function MapView({
 					onClick={() => {
 						setZoom(zoom * 2 ** -ZOOM_FACTOR);
 					}}
+					title="Zoom out"
 				/>
 				<FontAwesomeButton
 					className="MapView__Control"
@@ -460,6 +472,7 @@ function MapView({
 					onClick={() => {
 						setZoom(1);
 					}}
+					title="Reset zoom"
 				/>
 			</div>
 		</div>

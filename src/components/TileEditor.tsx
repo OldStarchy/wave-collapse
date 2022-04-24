@@ -162,6 +162,7 @@ function TileEditor({ tile }: { tile: TileType | undefined }) {
 												onClick={() => {
 													uploadFieldRef.current!.click();
 												}}
+												title="Add images"
 											/>
 										</div>
 

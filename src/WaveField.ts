@@ -46,6 +46,10 @@ class WaveField {
 		this.onChange?.();
 	}
 
+	public isEmpty() {
+		return this.field.size === 0;
+	}
+
 	public getTile(x: number, y: number): Tile | undefined {
 		const key = `${x}-${y}` as const;
 

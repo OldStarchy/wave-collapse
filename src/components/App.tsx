@@ -53,6 +53,33 @@ function App() {
 		};
 	}, [isPlaying, map]);
 
+	const save = () => {
+		const data = JSON.stringify(tileTypes.map(prepareTileTypeForSave));
+		const blob = new Blob([data], { type: 'application/json' });
+		const url = URL.createObjectURL(blob);
+		const link = document.createElement('a');
+		link.href = url;
+		link.download = 'map.json';
+		link.click();
+		URL.revokeObjectURL(url);
+	};
+
+	const load = () => {
+		const input = document.createElement('input');
+		input.type = 'file';
+		input.accept = 'application/json';
+		input.onchange = (e) => {
+			const file = (e.target as HTMLInputElement).files![0];
+			const reader = new FileReader();
+			reader.onload = (e) => {
+				const data = JSON.parse(e.target!.result as string);
+				setTileTypes(data.map(createTileTypeFromSave));
+			};
+			reader.readAsText(file);
+		};
+		input.click();
+	};
+
 	return (
 		<div
 			className="App"
@@ -102,6 +129,15 @@ function App() {
 						}}
 						//TODO: This should be done via context
 						isPlaying={isPlaying}
+						onSaveButtonClick={save}
+						onLoadButtonClick={load}
+						onNewButtonClick={() => {
+							//TODO: Don't use ugly window.confirm
+							if (window.confirm('Are you sure?')) {
+								setTileTypes([]);
+								setIsPlaying(false);
+							}
+						}}
 					/>
 					{/* TODO: make the tile editor and tile type list collapsible to make map view bigger */}
 					<TileTypeList
@@ -144,3 +180,32 @@ function App() {
 }
 
 export default App;
+
+function prepareTileTypeForSave(tileType: TileType) {
+	const { images, ...rest } = tileType;
+	return {
+		...rest,
+		images: images.map((image) => {
+			const canvas = document.createElement('canvas');
+			canvas.width = image.width;
+			canvas.height = image.height;
+			const ctx = canvas.getContext('2d')!;
+			ctx.drawImage(image, 0, 0);
+			return canvas.toDataURL('image/png');
+		}),
+	};
+}
+
+function createTileTypeFromSave(
+	tileType: ReturnType<typeof prepareTileTypeForSave>
+): TileType {
+	const { images, ...rest } = tileType;
+	return {
+		...rest,
+		images: images.map((image) => {
+			const img = new Image();
+			img.src = image;
+			return img;
+		}),
+	};
+}

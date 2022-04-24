@@ -1,5 +1,5 @@
-import { solid } from '@fortawesome/fontawesome-svg-core/import.macro';
-import { createRef, useCallback, useEffect, useState } from 'react';
+import {solid} from '@fortawesome/fontawesome-svg-core/import.macro';
+import {createRef, useCallback, useEffect, useState} from 'react';
 import WaveField from '../WaveField';
 import FontAwesomeButton from './FontAwesomeButton';
 import './MapView.css';
@@ -37,6 +37,9 @@ function MapView({
 	settings: _settings = {},
 	onPlayButtonClick,
 	onClearButtonClick,
+	onSaveButtonClick,
+	onLoadButtonClick,
+	onNewButtonClick,
 	isPlaying,
 }: {
 	map: WaveField;
@@ -49,6 +52,10 @@ function MapView({
 	settings?: Partial<MapViewSettings>;
 	onPlayButtonClick: () => void;
 	onClearButtonClick: () => void;
+	onSaveButtonClick: () => void;
+	onLoadButtonClick: () => void;
+	onNewButtonClick: () => void;
+
 	isPlaying: boolean;
 }) {
 	const settings = { ...defaultSettings, ..._settings };
@@ -404,16 +411,25 @@ function MapView({
 			></canvas>
 			<div className="MapView__Controls MapView__Controls--Top">
 				<FontAwesomeButton
+					className='MapView__Control'
+					icon={solid('file')}
+					onClick={onNewButtonClick}
+					title='New'
+				/>
+				<div></div>
+
+				<FontAwesomeButton
 					className="MapView__Control"
 					icon={solid('save')}
-					title="Save map (not yet implemented)"
-					disabled
+					onClick={onSaveButtonClick}
+					title="Save map"
+					disabled={map.tileset.size === 0}
 				/>
 				<FontAwesomeButton
 					className="MapView__Control"
 					icon={solid('folder')}
-					title="Open map (not yet implemented)"
-					disabled
+					onClick={onLoadButtonClick}
+					title="Open map"
 				/>
 				<FontAwesomeButton
 					className="MapView__Control"

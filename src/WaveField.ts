@@ -7,7 +7,7 @@ import Side from './Side';
  * A wave field on a 2D grid.
  */
 class WaveField {
-	protected readonly tileset: Readonly<Set<TileType>>;
+	public readonly tileset: Readonly<Set<TileType>>;
 
 	protected field: Map<`${number}-${number}`, Tile>;
 

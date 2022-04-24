@@ -430,11 +430,13 @@ function MapView({
 					className="MapView__Control"
 					icon={solid('forward-step')}
 					onClick={onStepButtonClick}
+					disabled={map.tileset.size === 0}
 				/>
 				<FontAwesomeButton
 					className="MapView__Control"
 					icon={isPlaying ? solid('pause') : solid('play')}
 					onClick={onPlayButtonClick}
+					disabled={map.tileset.size === 0}
 				/>
 			</div>
 			<div className="MapView__Controls MapView__Controls--Side">

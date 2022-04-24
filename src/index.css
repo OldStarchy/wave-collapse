@@ -6,10 +6,12 @@
 		monospace;
 
 	--color-background: #121212;
-	--color-border: #eaeaea;
 	--color-text: #eaeaea;
+	--color-border: var(--color-text);
 	--color-highlight-background: #60606080;
 	--color-highlight-background-solid: #606060;
+
+	--color-disabled: #888;
 
 	box-sizing: border-box;
 
@@ -20,7 +22,9 @@
 @media (prefers-color-scheme: light) {
 	:root {
 		--color-background: #eaeaea;
-		--color-border: #121212;
+		--color-text: #121212;
+		--color-highlight-background: #a0a0a080;
+		--color-highlight-background-solid: #a0a0a0;
 	}
 }
 

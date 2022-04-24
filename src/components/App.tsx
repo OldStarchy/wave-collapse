@@ -14,37 +14,44 @@ function App() {
 		string | undefined
 	>(undefined);
 
-	const tileTypes = useMemo(() => new Set<TileType>(), []);
-	const map = useMemo(() => new WaveField(tileTypes), []);
+	const [tileTypes, setTileTypes] = useState<TileType[]>([]);
+	const map = useMemo(() => new WaveField(new Set(tileTypes)), [tileTypes]);
 
 	const [dragCounter, setDragCounter] = useState(0);
 	const [imageLoadProgress, setImageLoadProgress] = useState(0);
 
-	useEffect(() => {
-		if (tileTypes.size === 0) {
-			['sand', 'grass'].forEach((name) => {
-				tileTypes.add({
-					name,
-					images: [],
-					canBeRotated: false,
-					connectionKeys: {
-						[Side.TOP]: name,
-						[Side.BOTTOM]: name,
-						[Side.LEFT]: name,
-						[Side.RIGHT]: name,
-					},
-				});
-			});
-
-			setImageLoadProgress(1);
-		}
-	}, []);
+	const [isPlaying, setIsPlaying] = useState(false);
 
 	const loading = imageLoadProgress < 1;
 
 	const selectedTile = Array.from(tileTypes).find(
 		(t) => t.name === selectedTileType
 	);
+
+	useEffect(() => {
+		setIsPlaying(false);
+	}, [map]);
+
+	useEffect(() => {
+		let timeout: number | undefined;
+
+		const animate: TimerHandler = () => {
+			if (isPlaying) {
+				map.step();
+				timeout = setTimeout(animate, 1000 / 10);
+			}
+		};
+
+		if (isPlaying) {
+			animate();
+		}
+
+		return () => {
+			if (timeout) {
+				clearTimeout(timeout);
+			}
+		};
+	}, [isPlaying, map]);
 
 	return (
 		<div
@@ -82,24 +89,37 @@ function App() {
 						}}
 						onStepButtonClick={() => {
 							map.step();
+							setIsPlaying(false);
 						}}
+						onPlayButtonClick={() => {
+							setIsPlaying((isPlaying) => !isPlaying);
+						}}
+						onClearButtonClick={() => {
+							map.clear();
+							setIsPlaying(false);
+						}}
+						//TODO: This should be done via context
+						isPlaying={isPlaying}
 					/>
 					<TileTypeList
-						tiles={tileTypes}
+						tiles={new Set(tileTypes)}
 						selectedTileType={selectedTileType}
 						setSelectedTileType={setSelectedTileType}
 						onAddTileButtonClick={() => {
-							tileTypes.add({
-								name: `tile${tileTypes.size}`,
-								images: [],
-								canBeRotated: false,
-								connectionKeys: {
-									[Side.TOP]: 'grass',
-									[Side.BOTTOM]: 'grass',
-									[Side.LEFT]: 'grass',
-									[Side.RIGHT]: 'grass',
+							setTileTypes((types) => [
+								...types,
+								{
+									name: `tile${types.length}`,
+									images: [],
+									canBeRotated: false,
+									connectionKeys: {
+										[Side.TOP]: 'grass',
+										[Side.BOTTOM]: 'grass',
+										[Side.LEFT]: 'grass',
+										[Side.RIGHT]: 'grass',
+									},
 								},
-							});
+							]);
 						}}
 					/>
 					<TileEditor tile={selectedTile} />

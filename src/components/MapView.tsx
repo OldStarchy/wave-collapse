@@ -35,6 +35,9 @@ function MapView({
 	onClickPosition,
 	onStepButtonClick,
 	settings: _settings = {},
+	onPlayButtonClick,
+	onClearButtonClick,
+	isPlaying,
 }: {
 	map: WaveField;
 	onClickPosition: (
@@ -44,6 +47,9 @@ function MapView({
 	) => void;
 	onStepButtonClick: () => void;
 	settings?: Partial<MapViewSettings>;
+	onPlayButtonClick: () => void;
+	onClearButtonClick: () => void;
+	isPlaying: boolean;
 }) {
 	const settings = { ...defaultSettings, ..._settings };
 	const mapView = createRef<HTMLCanvasElement>();
@@ -415,21 +421,20 @@ function MapView({
 				<FontAwesomeButton
 					className="MapView__Control"
 					icon={solid('trash')}
-					onClick={() => {
-						map.clear();
-					}}
+					onClick={onClearButtonClick}
 				/>
 
 				<div></div>
 
 				<FontAwesomeButton
 					className="MapView__Control"
-					icon={solid('play')}
+					icon={solid('forward-step')}
 					onClick={onStepButtonClick}
 				/>
 				<FontAwesomeButton
 					className="MapView__Control"
-					icon={solid('fast-forward')}
+					icon={isPlaying ? solid('pause') : solid('play')}
+					onClick={onPlayButtonClick}
 				/>
 			</div>
 			<div className="MapView__Controls MapView__Controls--Side">

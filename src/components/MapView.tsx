@@ -33,14 +33,23 @@ function randomFrom2(x: number, y: number) {
 function MapView({
 	map,
 	onClickPosition,
+	onStepButtonClick,
 	settings: _settings = {},
 }: {
 	map: WaveField;
-	onClickPosition: (x: number, y: number) => void;
+	onClickPosition: (
+		x: number,
+		y: number,
+		which: MouseEvent['button']
+	) => void;
+	onStepButtonClick: () => void;
 	settings?: Partial<MapViewSettings>;
 }) {
 	const settings = { ...defaultSettings, ..._settings };
 	const mapView = createRef<HTMLCanvasElement>();
+
+	const [, _rerender] = useState({});
+	const rerender = useCallback(() => _rerender({}), [_rerender]);
 
 	const [offset, setOffset] = useState({ x: 0, y: 0 });
 	const [zoom, setZoomNative] = useState(1);
@@ -81,6 +90,17 @@ function MapView({
 		fixCanvasSize();
 		draw();
 	}
+
+	useEffect(() => {
+		//TODO: better event handling
+		const thisMap = map;
+		thisMap.onChange = () => {
+			rerender();
+		};
+		return () => {
+			thisMap.onChange = null;
+		};
+	}, [map, rerender]);
 
 	useEffect(() => {
 		if (!mapView.current) return;
@@ -249,8 +269,9 @@ function MapView({
 						const image = tileType.images[imageIndex];
 
 						ctx.save();
-						ctx.translate(x, y);
-						ctx.rotate(rotation);
+						ctx.translate(x + TILE_SIZE / 2, y + TILE_SIZE / 2);
+						ctx.rotate(-(rotation * Math.PI) / 2);
+						ctx.translate(-TILE_SIZE / 2, -TILE_SIZE / 2);
 						ctx.globalAlpha = 1 / (i + 1);
 						ctx.drawImage(image, 0, 0, TILE_SIZE, TILE_SIZE);
 						ctx.restore();
@@ -347,11 +368,28 @@ function MapView({
 						y: e.clientY,
 					});
 				}}
+				onAuxClick={(e) => {
+					if (mousePos) {
+						const tileX = Math.floor(mousePos.x / TILE_SIZE);
+						const tileY = Math.floor(mousePos.y / TILE_SIZE);
+						onClickPosition(tileX, tileY, e.button);
+					}
+				}}
+				onContextMenu={(e) => {
+					if (e.shiftKey) return;
+
+					e.preventDefault();
+					if (mousePos) {
+						const tileX = Math.floor(mousePos.x / TILE_SIZE);
+						const tileY = Math.floor(mousePos.y / TILE_SIZE);
+						onClickPosition(tileX, tileY, e.button);
+					}
+				}}
 				onClick={(e) => {
 					if (mousePos) {
 						const tileX = Math.floor(mousePos.x / TILE_SIZE);
 						const tileY = Math.floor(mousePos.y / TILE_SIZE);
-						onClickPosition(tileX, tileY);
+						onClickPosition(tileX, tileY, e.button);
 					}
 				}}
 				onMouseLeave={() => {
@@ -387,6 +425,7 @@ function MapView({
 				<FontAwesomeButton
 					className="MapView__Control"
 					icon={solid('play')}
+					onClick={onStepButtonClick}
 				/>
 				<FontAwesomeButton
 					className="MapView__Control"

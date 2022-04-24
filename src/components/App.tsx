@@ -66,13 +66,22 @@ function App() {
 				<div className="App__Content">
 					<MapView
 						map={map}
-						onClickPosition={(x, y) => {
-							if (selectedTile) {
-								map.setTileState(x, y, {
-									tileType: selectedTile,
-									rotation: 0,
-								});
+						onClickPosition={(x, y, button) => {
+							if (button === 0) {
+								if (selectedTile) {
+									map.setTileState(x, y, {
+										tileType: selectedTile,
+										rotation: 0,
+									});
+								}
+							} else if (button === 1) {
+								map.collapse(x, y);
+							} else if (button === 2) {
+								map.clearTile(x, y);
 							}
+						}}
+						onStepButtonClick={() => {
+							map.step();
 						}}
 					/>
 					<TileTypeList

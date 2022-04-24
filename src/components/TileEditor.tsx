@@ -1,5 +1,5 @@
 import { solid } from '@fortawesome/fontawesome-svg-core/import.macro';
-import React, { createRef, useEffect, useState } from 'react';
+import React, { createRef, useCallback, useEffect, useState } from 'react';
 import DragContext from '../context/DragContext';
 import TileType from '../model/TileType';
 import Side from '../Side';
@@ -12,7 +12,7 @@ import './TileEditor.css';
 function TileEditor({ tile }: { tile: TileType | undefined }) {
 	const [selectedImage, setSelectedImage] = useState<number>(0);
 	const [, _rerender] = useState({});
-	const rerender = () => _rerender({});
+	const rerender = useCallback(() => _rerender({}), [_rerender]);
 
 	const [isDraggingOver, setIsDraggingOver] = useState(false);
 
@@ -21,31 +21,35 @@ function TileEditor({ tile }: { tile: TileType | undefined }) {
 	}, [tile]);
 
 	const uploadFieldRef = createRef<HTMLInputElement>();
+	const pasteZoneRef = createRef<HTMLDivElement>();
 
-	async function loadImages(files: FileList) {
-		const promises = Array.from(files).map((file) => {
-			return new Promise<HTMLImageElement>((resolve, reject) => {
-				if (file.type.startsWith('image/')) {
-					const image = new Image();
-					image.src = URL.createObjectURL(file);
-					image.onload = () => {
-						resolve(image);
-					};
-					image.onerror = () => {
+	const loadImages = useCallback(
+		async function loadImages(files: Iterable<File>) {
+			const promises = Array.from(files).map((file) => {
+				return new Promise<HTMLImageElement>((resolve, reject) => {
+					if (file.type.startsWith('image/')) {
+						const image = new Image();
+						image.src = URL.createObjectURL(file);
+						image.onload = () => {
+							resolve(image);
+						};
+						image.onerror = () => {
+							reject(file);
+						};
+					} else {
 						reject(file);
-					};
-				} else {
-					reject(file);
-				}
+					}
+				});
 			});
-		});
 
-		//TODO: don't mutate props
-		const images = await Promise.all(promises);
+			//TODO: don't mutate props
+			const images = await Promise.all(promises);
 
-		tile?.images.push(...images);
-		rerender();
-	}
+			tile?.images.push(...images);
+			rerender();
+		},
+		[tile, rerender]
+	);
 
 	const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
 		const files = event.target.files;
@@ -62,9 +66,39 @@ function TileEditor({ tile }: { tile: TileType | undefined }) {
 		}
 	};
 
+	const handlePaste = useCallback(
+		(event: ClipboardEvent) => {
+			if (!event.clipboardData) return;
+			if (document.activeElement !== pasteZoneRef.current) return;
+
+			event.preventDefault();
+			const items = event.clipboardData.items;
+			if (items) {
+				const files = Array.from(items)
+					.filter(
+						(item) => item.kind === 'file' || item.kind === 'image'
+					)
+					.map((item) => item.getAsFile()!);
+
+				if (files.length > 0) {
+					loadImages(files);
+				}
+			}
+		},
+		[loadImages, pasteZoneRef]
+	);
+
 	const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
 		event.preventDefault();
 	};
+
+	useEffect(() => {
+		document.addEventListener('paste', handlePaste);
+
+		return () => {
+			document.removeEventListener('paste', handlePaste);
+		};
+	}, [handlePaste]);
 
 	return tile ? (
 		<div className="TileEditor">
@@ -82,29 +116,26 @@ function TileEditor({ tile }: { tile: TileType | undefined }) {
 			<TabbedPanel defaultTab="Images" className="TileEditor__Properties">
 				{{
 					Images: (
-						<div className="TileImageSelector" key={tile.name}>
+						<div
+							className="TileImageSelector"
+							key={tile.name}
+							tabIndex={0}
+							ref={pasteZoneRef}
+						>
 							<DragContext.Consumer>
-								{({ isDragging }) =>
-									isDragging ? (
+								{({ isDragging }) => (
+									<>
 										<div
-											className={`TileImageSelector__DropZone ${
-												isDraggingOver
-													? 'TileImageSelector__DropZone--isDraggingOver'
-													: ''
-											}`}
-											onDrop={handleDrop}
-											onDragOver={handleDragOver}
-											onDragEnter={() =>
-												setIsDraggingOver(true)
-											}
-											onDragLeave={() =>
-												setIsDraggingOver(false)
-											}
+											className="TileImageSelector__Images"
+											// display none instead of removing the element from dom;
+											// if dragging starts from inside this element and the element then disappears,
+											// we get a dragEnter event but no dragLeave event
+											style={{
+												display: isDragging
+													? 'none'
+													: undefined,
+											}}
 										>
-											Drop images here
-										</div>
-									) : (
-										<div className="TileImageSelector__Images">
 											{tile.images.map((image, i) => (
 												<div
 													className={`TileImageSelector__Image ${
@@ -133,8 +164,28 @@ function TileEditor({ tile }: { tile: TileType | undefined }) {
 												}}
 											/>
 										</div>
-									)
-								}
+
+										{isDragging && (
+											<div
+												className={`TileImageSelector__DropZone ${
+													isDraggingOver
+														? 'TileImageSelector__DropZone--isDraggingOver'
+														: ''
+												}`}
+												onDrop={handleDrop}
+												onDragOver={handleDragOver}
+												onDragEnter={() =>
+													setIsDraggingOver(true)
+												}
+												onDragLeave={() =>
+													setIsDraggingOver(false)
+												}
+											>
+												Drop images here
+											</div>
+										)}
+									</>
+								)}
 							</DragContext.Consumer>
 						</div>
 					),
@@ -149,6 +200,7 @@ function TileEditor({ tile }: { tile: TileType | undefined }) {
 								onChange={(value) => {
 									//TODO: Don't mutate props
 									tile.connectionKeys[Side.RIGHT] = value;
+									rerender();
 								}}
 							/>
 							<ConnectionSelector
@@ -157,6 +209,7 @@ function TileEditor({ tile }: { tile: TileType | undefined }) {
 								onChange={(value) => {
 									//TODO: Don't mutate props
 									tile.connectionKeys[Side.TOP] = value;
+									rerender();
 								}}
 							/>
 							<ConnectionSelector
@@ -165,6 +218,7 @@ function TileEditor({ tile }: { tile: TileType | undefined }) {
 								onChange={(value) => {
 									//TODO: Don't mutate props
 									tile.connectionKeys[Side.LEFT] = value;
+									rerender();
 								}}
 							/>
 							<ConnectionSelector
@@ -173,6 +227,17 @@ function TileEditor({ tile }: { tile: TileType | undefined }) {
 								onChange={(value) => {
 									//TODO: Don't mutate props
 									tile.connectionKeys[Side.BOTTOM] = value;
+									rerender();
+								}}
+							/>
+
+							<span>Can Rotate</span>
+							<input
+								type="checkbox"
+								checked={tile.canBeRotated}
+								onChange={(e) => {
+									tile.canBeRotated = e.target.checked;
+									rerender();
 								}}
 							/>
 						</div>

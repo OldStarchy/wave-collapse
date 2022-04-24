@@ -18,12 +18,8 @@ function ConnectionSelector({
 	onChange: (value: string | null) => void;
 }) {
 	const [isOpen, setIsOpen] = useState(false);
-	const [selectedConnection, setSelectedConnection] = useState<string | null>(
-		value
-	);
 
 	const handleChange = (value: string | null) => {
-		setSelectedConnection(value);
 		onChange(value);
 		setIsOpen(false);
 	};
@@ -36,9 +32,18 @@ function ConnectionSelector({
 					className="ConnectionSelector__Button"
 					onClick={() => setIsOpen(!isOpen)}
 				>
-					<div className="ConnectionSelector__Button__Text">
-						{selectedConnection || 'None'}
-					</div>
+					<input
+						type="text"
+						className="ConnectionSelector__Button__Text"
+						value={value || ''}
+						onChange={(e) => void onChange(e.target.value || null)}
+						onKeyDown={(e) => {
+							if (e.key === 'Enter') {
+								setIsOpen(false);
+							}
+						}}
+					/>
+
 					<div className="ConnectionSelector__Button__Icon">
 						{isOpen ? (
 							<FontAwesomeIcon icon={solid('chevron-up')} />
@@ -52,10 +57,7 @@ function ConnectionSelector({
 						{connections.map(({ key, name }) => (
 							<div
 								key={key}
-								className={`ConnectionSelector__MenuItem ${
-									selectedConnection === key &&
-									'ConnectionSelector__MenuItem--selected'
-								}`}
+								className="ConnectionSelector__MenuItem"
 								onClick={() => handleChange(key)}
 							>
 								{name}

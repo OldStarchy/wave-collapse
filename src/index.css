@@ -31,6 +31,7 @@
 	color: inherit;
 	font-size: inherit;
 	font-family: inherit;
+	background-color: transparent;
 }
 
 body {
@@ -62,4 +63,8 @@ code {
 
 ::-webkit-scrollbar-thumb:hover {
 	background: var(--color-highlight-background);
+}
+
+input {
+	border: none;
 }

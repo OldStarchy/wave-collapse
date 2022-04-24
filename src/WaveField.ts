@@ -11,6 +11,8 @@ class WaveField {
 
 	protected field: Map<`${number}-${number}`, Tile>;
 
+	public onChange: (() => void) | null = null;
+
 	public constructor(tileset: Set<TileType>) {
 		this.tileset = tileset;
 		this.field = new Map();
@@ -41,6 +43,7 @@ class WaveField {
 
 	public clear() {
 		this.field.clear();
+		this.onChange?.();
 	}
 
 	public getTile(x: number, y: number): Tile | undefined {
@@ -72,15 +75,18 @@ class WaveField {
 		const tile = this.getOrMakeTile(x, y);
 
 		tile.superState = [tileState];
-
+		this.onChange?.();
 		this.propagateState(tile);
 	}
+	public clearTile(x: number, y: number): void {
+		this.field.delete(`${x}-${y}`);
+	}
 
-	public collapse(x: number, y: number): TileState | null {
+	public collapse(x: number, y: number): void {
 		const tile = this.getOrMakeTile(x, y);
 
-		if (tile.superState.length === 0) {
-			return null;
+		if (tile.superState.length < 2) {
+			return;
 		}
 
 		const weightedStates: [TileState, number][] = [];
@@ -96,13 +102,62 @@ class WaveField {
 
 		for (const [state, weight] of weightedStates) {
 			if (random < weight) {
-				return state;
+				tile.superState = [state];
+				tile.dirty = true;
+
+				this.onChange?.();
+				return;
 			}
 
 			random -= weight;
 		}
+	}
 
-		return null;
+	public step(): void {
+		let tilesToUpdate: Tile[] = [];
+
+		if (this.field.size === 0) {
+			tilesToUpdate = [this.getOrMakeTile(0, 0)];
+		}
+
+		if (tilesToUpdate.length === 0) {
+			tilesToUpdate = Array.from(this.field.values()).reduce<Tile[]>(
+				(tilesToUpdate, value) => {
+					if (
+						value.superState.length > 1 &&
+						(tilesToUpdate.length === 0 ||
+							value.superState.length <
+								tilesToUpdate[0].superState.length)
+					) {
+						return [...tilesToUpdate, value];
+					}
+					return tilesToUpdate;
+				},
+				[]
+			);
+		}
+
+		if (tilesToUpdate.length === 0) {
+			tilesToUpdate = Array.from(this.field.values()).reduce<Tile[]>(
+				(tilesToUpdate, value) => {
+					if (value.dirty) {
+						return [...tilesToUpdate, value];
+					}
+					return tilesToUpdate;
+				},
+				[]
+			);
+		}
+
+		if (tilesToUpdate.length > 0) {
+			const tileToUpdate =
+				tilesToUpdate[Math.floor(Math.random() * tilesToUpdate.length)];
+
+			this.collapse(tileToUpdate.x, tileToUpdate.y);
+
+			this.propagateState(tileToUpdate, undefined, 1);
+			this.onChange?.();
+		}
 	}
 
 	protected computeWeight(x: number, y: number, state: TileState): number {
@@ -110,7 +165,7 @@ class WaveField {
 		return 1;
 	}
 
-	protected propagateState(tile: Tile, ignoreSide?: Side): void {
+	protected propagateState(tile: Tile, ignoreSide?: Side, limit = 100): void {
 		const openCoords = new Set<`${number}-${number}`>();
 		const openTiles: { tile: Tile; ignoreSide?: Side }[] = [];
 
@@ -137,12 +192,12 @@ class WaveField {
 		while (openTiles.length > 0) {
 			const { tile, ignoreSide } = shiftTile();
 
-			if (counter > 100) {
-				tile.dirty = true;
+			if (counter > limit) {
 				continue;
 			}
 
 			counter++;
+			tile.dirty = false;
 
 			if (tile.superState.length === 0) {
 				continue;
@@ -167,8 +222,14 @@ class WaveField {
 
 					const connectionKey =
 						state.tileType.connectionKeys[localSide];
+
 					if (connectionKey !== null)
-					allowedConnectionKeys.add(connectionKey);
+						allowedConnectionKeys.add(
+							// the allowed connection needs to be flipped because tiles are conected on opposite sides
+							// eg. top connects to bottom, so keys like "water/sand" get flipped to "sand/water"
+							// idk its hard to explain but just trust me.
+							connectionKey.split('/').reverse().join('/')
+						);
 				}
 
 				const offset = Side.offset[globalDirection];
@@ -207,6 +268,7 @@ class WaveField {
 
 			// Propagate the state to the connected tiles
 			modifiedTiles.forEach((tile, side) => {
+				tile.dirty = true;
 				pushTile(tile, side);
 			});
 		}

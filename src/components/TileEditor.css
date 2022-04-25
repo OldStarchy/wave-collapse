@@ -3,8 +3,8 @@
 	grid-template-columns: auto 1fr 1fr;
 	grid-template-rows: auto 1fr;
 	grid-template-areas:
-		'image name images'
-		'image description images';
+		'image info images'
+		'image info images';
 	gap: 1rem;
 }
 .TileEditor--Empty {
@@ -49,6 +49,21 @@
 
 .TileEditor__Connections .ConnectionSelector {
 	display: contents;
+}
+
+.TileEditor__Info {
+	grid-area: info;
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	margin-bottom: 0.5rem;
+}
+.TileEditor__Name {
+	font-size: 2rem;
+}
+.TileEditor__Description {
+	flex-grow: 1;
+	resize: none;
 }
 
 .TileImageSelector {

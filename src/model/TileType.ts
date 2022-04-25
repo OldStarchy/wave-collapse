@@ -1,7 +1,9 @@
 import Side from '../Side';
 
 export default interface TileType {
+	id: string;
 	name: string;
+	description: string;
 	images: HTMLImageElement[];
 	canBeRotated: boolean;
 

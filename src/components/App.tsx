@@ -154,7 +154,9 @@ function App() {
 								setTileTypes((types) => [
 									...types,
 									{
+										id: Date.now().toFixed(16),
 										name: `tile${types.length}`,
+										description: '',
 										images: [],
 										canBeRotated: false,
 										connectionKeys: {

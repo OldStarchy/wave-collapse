@@ -69,6 +69,7 @@ code {
 	background: var(--color-highlight-background);
 }
 
-input {
+input,
+textarea {
 	border: none;
 }

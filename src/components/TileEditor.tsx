@@ -6,6 +6,7 @@ import Side from '../Side';
 import ConnectionSelector from './ConnectionSelector';
 import FontAwesomeButton from './FontAwesomeButton';
 import Hidden from './Hidden';
+import BufferedInput from './input/BufferedInput';
 import TabbedPanel from './TabbedPanel';
 import './TileEditor.css';
 
@@ -111,7 +112,7 @@ function TileEditor({
 		<div className="TileEditor">
 			<div className="TileEditor__Image">
 				<div className="TileEditor__ImageContainer">
-					{tile && tile.images[selectedImage] && (
+					{tile.images[selectedImage] && (
 						<img
 							src={tile.images[selectedImage].src}
 							alt={tile.name}
@@ -119,13 +120,42 @@ function TileEditor({
 					)}
 				</div>
 			</div>
-			<div className="TileEditor__Name">{tile && tile.name}</div>
+			<div className="TileEditor__Info">
+				<BufferedInput
+					className="TileEditor__Name"
+					value={tile.name}
+					validator={(value) => {
+						if (value.length === 0) {
+							return 'Name is required';
+						}
+
+						if (value.length > 32) {
+							return 'Name is too long';
+						}
+
+						return null;
+					}}
+					onChange={(value) => {
+						tile.name = value;
+						rerender();
+					}}
+				/>
+				<textarea
+					className="TileEditor__Description"
+					onChange={(e) => {
+						tile.description = e.target.value;
+						rerender();
+					}}
+					placeholder="Click to add a description"
+					value={tile.description}
+				/>
+			</div>
 			<TabbedPanel defaultTab="Images" className="TileEditor__Properties">
 				{{
 					Images: (
 						<div
 							className="TileImageSelector"
-							key={tile.name}
+							key={tile.id}
 							tabIndex={0}
 							ref={pasteZoneRef}
 						>
@@ -198,10 +228,7 @@ function TileEditor({
 						</div>
 					),
 					Connections: (
-						<div
-							className="TileEditor__Connections"
-							key={tile.name}
-						>
+						<div className="TileEditor__Connections" key={tile.id}>
 							<ConnectionSelector
 								label="Right"
 								value={tile.connectionKeys[Side.RIGHT]}

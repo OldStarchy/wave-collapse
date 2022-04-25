@@ -1,0 +1,7 @@
+.BufferedInput {
+	display: flex;
+}
+
+.BufferedInput__Input {
+	flex-grow: 1;
+}

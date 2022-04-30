@@ -41,6 +41,7 @@ function MapView({
 	onLoadButtonClick,
 	onNewButtonClick,
 	isPlaying,
+	renderUnknownTiles,
 }: {
 	map: WaveField;
 	onClickPosition: (
@@ -57,6 +58,7 @@ function MapView({
 	onNewButtonClick: () => void;
 
 	isPlaying: boolean;
+	renderUnknownTiles: boolean;
 }) {
 	const settings = { ...defaultSettings, ..._settings };
 	const mapView = createRef<HTMLCanvasElement>();
@@ -246,7 +248,8 @@ function MapView({
 			for (let y = topLeft.y; y < bottomRight.y; y += TILE_SIZE) {
 				const superState =
 					map.getTile(x / TILE_SIZE, y / TILE_SIZE)?.superState ??
-					defaultSuperState;
+					(renderUnknownTiles ? defaultSuperState : null);
+				if (superState === null) continue;
 
 				// map.forEach(({ superState, x, y }) => {
 				// 	if (x * TILE_SIZE < topLeft.x || x * TILE_SIZE > bottomRight.x)
@@ -411,10 +414,10 @@ function MapView({
 			></canvas>
 			<div className="MapView__Controls MapView__Controls--Top">
 				<FontAwesomeButton
-					className='MapView__Control'
+					className="MapView__Control"
 					icon={solid('file')}
 					onClick={onNewButtonClick}
-					title='New'
+					title="New"
 				/>
 				<div></div>
 

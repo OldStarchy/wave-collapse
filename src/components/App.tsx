@@ -138,6 +138,7 @@ function App() {
 								setIsPlaying(false);
 							}
 						}}
+						renderUnknownTiles={false}
 					/>
 					{/* TODO: make the tile editor and tile type list collapsible to make map view bigger */}
 					<TileTypeList

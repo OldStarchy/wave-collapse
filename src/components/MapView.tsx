@@ -1,7 +1,9 @@
-import {solid} from '@fortawesome/fontawesome-svg-core/import.macro';
-import {createRef, useCallback, useEffect, useState} from 'react';
+import { solid } from '@fortawesome/fontawesome-svg-core/import.macro';
+import { createRef, useCallback, useContext, useEffect, useState } from 'react';
+import ConfigContext from '../context/ConfigContext';
 import WaveField from '../WaveField';
 import FontAwesomeButton from './FontAwesomeButton';
+import BufferedInput from './input/BufferedInput';
 import './MapView.css';
 
 const TILE_SIZE = 32;
@@ -62,6 +64,8 @@ function MapView({
 }) {
 	const settings = { ...defaultSettings, ..._settings };
 	const mapView = createRef<HTMLCanvasElement>();
+
+	const [config, setConfig] = useContext(ConfigContext);
 
 	const [, _rerender] = useState({});
 	const rerender = useCallback(() => _rerender({}), [_rerender]);
@@ -412,91 +416,136 @@ function MapView({
 					setMousePosition(undefined);
 				}}
 			></canvas>
-			<div className="MapView__Controls MapView__Controls--Top">
-				<FontAwesomeButton
-					className="MapView__Control"
-					icon={solid('file')}
-					onClick={onNewButtonClick}
-					title="New"
-				/>
-				<div></div>
+			<div className="MapView__Controls MapView__Controls--Bottom">
+				Autogen FPS:
+				<BufferedInput
+					validator={(autogenFps) => {
+						if (!/^\d+$/.test(autogenFps)) {
+							return 'Must be a number';
+						}
 
-				<FontAwesomeButton
-					className="MapView__Control"
-					icon={solid('save')}
-					onClick={onSaveButtonClick}
-					title="Save map"
-					disabled={map.tileset.size === 0}
-				/>
-				<FontAwesomeButton
-					className="MapView__Control"
-					icon={solid('folder')}
-					onClick={onLoadButtonClick}
-					title="Open map"
-				/>
-				<FontAwesomeButton
-					className="MapView__Control"
-					icon={solid('image')}
-					title="Export map (not yet implemented)"
-					disabled
-				/>
+						const n = parseInt(autogenFps);
+						if (n < 1) {
+							return 'Must be greater than 0';
+						}
 
-				<div></div>
+						if (n > 1000) {
+							return 'Max 1000';
+						}
 
-				<FontAwesomeButton
-					className="MapView__Control"
-					icon={solid('trash')}
-					onClick={onClearButtonClick}
-					title="Clear map"
-					disabled={map.isEmpty()}
-				/>
-
-				<div></div>
-
-				<FontAwesomeButton
-					className="MapView__Control"
-					icon={solid('forward-step')}
-					onClick={onStepButtonClick}
-					disabled={map.tileset.size === 0}
-					title="Step"
+						return null;
+					}}
+					onChange={(autogenFps) => {
+						setConfig({
+							...config,
+							autogenFps: Number.parseInt(autogenFps),
+						});
+					}}
+					value={config.autogenFps.toString()}
+					placeholder="Autogen FPS"
 				/>
 				<FontAwesomeButton
 					className="MapView__Control"
-					icon={isPlaying ? solid('pause') : solid('play')}
-					onClick={onPlayButtonClick}
-					disabled={map.tileset.size === 0}
-					title={isPlaying ? 'Pause' : 'Play'}
+					icon={config.showGui ? solid('eye') : solid('eye-slash')}
+					onClick={() => {
+						setConfig({
+							...config,
+							showGui: !config.showGui,
+						});
+					}}
+					title={config.showGui ? 'Hide GUI' : 'Show GUI'}
 				/>
 			</div>
-			<div className="MapView__Controls MapView__Controls--Side">
-				<FontAwesomeButton
-					className="MapView__Control"
-					icon={solid('plus')}
-					onClick={() => {
-						setZoom(zoom * 2 ** ZOOM_FACTOR);
-					}}
-					disabled={zoom >= MAX_ZOOM}
-					title="Zoom in"
-				/>
-				<FontAwesomeButton
-					className="MapView__Control"
-					icon={solid('minus')}
-					onClick={() => {
-						setZoom(zoom * 2 ** -ZOOM_FACTOR);
-					}}
-					disabled={zoom <= MIN_ZOOM}
-					title="Zoom out"
-				/>
-				<FontAwesomeButton
-					className="MapView__Control"
-					icon={solid('sync-alt')}
-					onClick={() => {
-						setZoom(1);
-					}}
-					disabled={zoom === 1}
-					title="Reset zoom"
-				/>
-			</div>
+
+			{config.showGui && (
+				<>
+					<div className="MapView__Controls MapView__Controls--Top">
+						<FontAwesomeButton
+							className="MapView__Control"
+							icon={solid('file')}
+							onClick={onNewButtonClick}
+							title="New"
+						/>
+						<div></div>
+
+						<FontAwesomeButton
+							className="MapView__Control"
+							icon={solid('save')}
+							onClick={onSaveButtonClick}
+							title="Save map"
+							disabled={map.tileset.size === 0}
+						/>
+						<FontAwesomeButton
+							className="MapView__Control"
+							icon={solid('folder')}
+							onClick={onLoadButtonClick}
+							title="Open map"
+						/>
+						<FontAwesomeButton
+							className="MapView__Control"
+							icon={solid('image')}
+							title="Export map (not yet implemented)"
+							disabled
+						/>
+
+						<div></div>
+
+						<FontAwesomeButton
+							className="MapView__Control"
+							icon={solid('trash')}
+							onClick={onClearButtonClick}
+							title="Clear map"
+							disabled={map.isEmpty()}
+						/>
+
+						<div></div>
+
+						<FontAwesomeButton
+							className="MapView__Control"
+							icon={solid('forward-step')}
+							onClick={onStepButtonClick}
+							disabled={map.tileset.size === 0}
+							title="Step"
+						/>
+						<FontAwesomeButton
+							className="MapView__Control"
+							icon={isPlaying ? solid('pause') : solid('play')}
+							onClick={onPlayButtonClick}
+							disabled={map.tileset.size === 0}
+							title={isPlaying ? 'Pause' : 'Play'}
+						/>
+					</div>
+					<div className="MapView__Controls MapView__Controls--Side">
+						<FontAwesomeButton
+							className="MapView__Control"
+							icon={solid('plus')}
+							onClick={() => {
+								setZoom(zoom * 2 ** ZOOM_FACTOR);
+							}}
+							disabled={zoom >= MAX_ZOOM}
+							title="Zoom in"
+						/>
+						<FontAwesomeButton
+							className="MapView__Control"
+							icon={solid('minus')}
+							onClick={() => {
+								setZoom(zoom * 2 ** -ZOOM_FACTOR);
+							}}
+							disabled={zoom <= MIN_ZOOM}
+							title="Zoom out"
+						/>
+						<FontAwesomeButton
+							className="MapView__Control"
+							icon={solid('sync-alt')}
+							onClick={() => {
+								setZoom(1);
+							}}
+							disabled={zoom === 1}
+							title="Reset zoom"
+						/>
+					</div>
+				</>
+			)}
 		</div>
 	);
 }

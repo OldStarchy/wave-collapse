@@ -30,6 +30,13 @@
 	align-items: stretch;
 }
 
+.App__Content--nogui {
+	grid-template-areas: 'MapView';
+
+	grid-template-columns: 1fr;
+	grid-template-rows: 1fr;
+}
+
 .App .MapView {
 	grid-area: MapView;
 	position: relative;

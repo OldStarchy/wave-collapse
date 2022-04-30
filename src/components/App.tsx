@@ -1,4 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
+import ConfigContext, {
+	AppConfig,
+	defaultConfig,
+} from '../context/ConfigContext';
 import DragContext from '../context/DragContext';
 import TileType from '../model/TileType';
 import Side from '../Side';
@@ -14,6 +18,7 @@ function App() {
 		string | undefined
 	>(undefined);
 
+	const [config, setConfig] = useState<AppConfig>(defaultConfig);
 	const [tileTypes, setTileTypes] = useState<TileType[]>([]);
 	const map = useMemo(() => new WaveField(new Set(tileTypes)), [tileTypes]);
 
@@ -38,7 +43,7 @@ function App() {
 		const animate: TimerHandler = () => {
 			if (isPlaying) {
 				map.step();
-				timeout = setTimeout(animate, 1000 / 10);
+				timeout = setTimeout(animate, 1000 / config.autogenFps);
 			}
 		};
 
@@ -51,7 +56,7 @@ function App() {
 				clearTimeout(timeout);
 			}
 		};
-	}, [isPlaying, map]);
+	}, [isPlaying, map, config]);
 
 	const save = () => {
 		const data = JSON.stringify(tileTypes.map(prepareTileTypeForSave));
@@ -81,104 +86,115 @@ function App() {
 	};
 
 	return (
-		<div
-			className="App"
-			onDragEnter={(e) => {
-				setDragCounter((dragCounter) => dragCounter + 1);
-			}}
-			onDragLeave={(e) => {
-				setDragCounter((dragCounter) => dragCounter - 1);
-			}}
-			onDragEnd={(e) => {
-				setDragCounter(0);
-			}}
-			onDrop={(e) => {
-				setDragCounter(0);
-			}}
-		>
-			<DragContext.Provider value={{ isDragging: dragCounter > 0 }}>
-				<div className="App__Content">
-					<MapView
-						map={map}
-						onClickPosition={(x, y, button) => {
-							if (button === 0) {
-								if (selectedTile) {
-									map.setTileState(x, y, {
-										tileType: selectedTile,
-										rotation: 0,
-									});
+		<ConfigContext.Provider value={[config, setConfig]}>
+			<div
+				className="App"
+				onDragEnter={(e) => {
+					setDragCounter((dragCounter) => dragCounter + 1);
+				}}
+				onDragLeave={(e) => {
+					setDragCounter((dragCounter) => dragCounter - 1);
+				}}
+				onDragEnd={(e) => {
+					setDragCounter(0);
+				}}
+				onDrop={(e) => {
+					setDragCounter(0);
+				}}
+			>
+				<DragContext.Provider value={{ isDragging: dragCounter > 0 }}>
+					<div
+						className={
+							'App__Content' +
+							(config.showGui ? '' : ' App__Content--nogui')
+						}
+					>
+						<MapView
+							map={map}
+							onClickPosition={(x, y, button) => {
+								if (button === 0) {
+									if (selectedTile) {
+										map.setTileState(x, y, {
+											tileType: selectedTile,
+											rotation: 0,
+										});
+									}
+								} else if (button === 1) {
+									map.collapse(x, y);
+								} else if (button === 2) {
+									map.clearTile(x, y);
 								}
-							} else if (button === 1) {
-								map.collapse(x, y);
-							} else if (button === 2) {
-								map.clearTile(x, y);
-							}
-						}}
-						onStepButtonClick={() => {
-							map.step();
-							setIsPlaying(false);
-						}}
-						onPlayButtonClick={() => {
-							setIsPlaying((isPlaying) => !isPlaying);
-						}}
-						onClearButtonClick={() => {
-							if (window.confirm('Are you sure?')) {
-								map.clear();
+							}}
+							onStepButtonClick={() => {
+								map.step();
 								setIsPlaying(false);
-							}
-						}}
-						//TODO: This should be done via context
-						isPlaying={isPlaying}
-						onSaveButtonClick={save}
-						onLoadButtonClick={load}
-						onNewButtonClick={() => {
-							//TODO: Don't use ugly window.confirm
-							if (window.confirm('Are you sure?')) {
-								setTileTypes([]);
-								setIsPlaying(false);
-							}
-						}}
-						renderUnknownTiles={false}
-					/>
-					{/* TODO: make the tile editor and tile type list collapsible to make map view bigger */}
-					<TileTypeList
-						tiles={new Set(tileTypes)}
-						selectedTileType={selectedTileType}
-						setSelectedTileType={setSelectedTileType}
-						onAddTileButtonClick={() => {
-							if (
-								map.isEmpty() ||
-								window.confirm(
-									'This will clear the map. Continue?'
-								)
-							) {
-								setTileTypes((types) => [
-									...types,
-									{
-										id: Date.now().toFixed(16),
-										name: `tile${types.length}`,
-										description: '',
-										images: [],
-										canBeRotated: false,
-										connectionKeys: {
-											[Side.TOP]: 'grass',
-											[Side.BOTTOM]: 'grass',
-											[Side.LEFT]: 'grass',
-											[Side.RIGHT]: 'grass',
-										},
-									},
-								]);
-							}
-						}}
-					/>
-					<TileEditor
-						tile={selectedTile}
-						hasOtherTiles={tileTypes.length > 0}
-					/>
-				</div>
-				{loading && <ProgressBar progress={imageLoadProgress} />}
-			</DragContext.Provider>
-		</div>
+							}}
+							onPlayButtonClick={() => {
+								setIsPlaying((isPlaying) => !isPlaying);
+							}}
+							onClearButtonClick={() => {
+								if (window.confirm('Are you sure?')) {
+									map.clear();
+									setIsPlaying(false);
+								}
+							}}
+							//TODO: This should be done via context
+							isPlaying={isPlaying}
+							onSaveButtonClick={save}
+							onLoadButtonClick={load}
+							onNewButtonClick={() => {
+								//TODO: Don't use ugly window.confirm
+								if (window.confirm('Are you sure?')) {
+									setTileTypes([]);
+									setIsPlaying(false);
+								}
+							}}
+							renderUnknownTiles={false}
+						/>
+						{config.showGui && (
+							<>
+								{/* TODO: make the tile editor and tile type list collapsible to make map view bigger */}
+								<TileTypeList
+									tiles={new Set(tileTypes)}
+									selectedTileType={selectedTileType}
+									setSelectedTileType={setSelectedTileType}
+									onAddTileButtonClick={() => {
+										if (
+											map.isEmpty() ||
+											window.confirm(
+												'This will clear the map. Continue?'
+											)
+										) {
+											setTileTypes((types) => [
+												...types,
+												{
+													id: Date.now().toFixed(16),
+													name: `tile${types.length}`,
+													description: '',
+													images: [],
+													canBeRotated: false,
+													connectionKeys: {
+														[Side.TOP]: 'grass',
+														[Side.BOTTOM]: 'grass',
+														[Side.LEFT]: 'grass',
+														[Side.RIGHT]: 'grass',
+													},
+												},
+											]);
+										}
+									}}
+								/>
+								<TileEditor
+									tile={selectedTile}
+									hasOtherTiles={tileTypes.length > 0}
+								/>
+							</>
+						)}
+					</div>
+					{loading && <ProgressBar progress={imageLoadProgress} />}
+				</DragContext.Provider>
+			</div>
+		</ConfigContext.Provider>
 	);
 }
 

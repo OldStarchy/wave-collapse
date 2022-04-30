@@ -35,6 +35,12 @@
 	width: auto;
 	transform: translateX(-50%);
 }
+.MapView__Controls--Bottom {
+	bottom: 0;
+	left: 50%;
+	width: auto;
+	transform: translateX(-50%);
+}
 
 .MapView__Controls:hover {
 	opacity: 1;

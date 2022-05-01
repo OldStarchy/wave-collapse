@@ -1,5 +1,5 @@
-import {solid} from '@fortawesome/fontawesome-svg-core/import.macro';
-import React, {createRef, useCallback, useEffect, useState} from 'react';
+import { solid } from '@fortawesome/fontawesome-svg-core/import.macro';
+import React, { createRef, useCallback, useEffect, useState } from 'react';
 import DragContext from '../context/DragContext';
 import TileType from '../model/TileType';
 import Side from '../Side';
@@ -14,13 +14,16 @@ function TileEditor({
 	tile,
 	//TODO: Move this to context
 	hasOtherTiles,
+	setTileProps,
 }: {
-	tile: TileType | null;
+	tile: Readonly<TileType> | null;
 	hasOtherTiles: boolean;
+	setTileProps: (
+		id: TileType['id'],
+		props: Partial<Omit<TileType, 'id'>>
+	) => void;
 }) {
 	const [selectedImage, setSelectedImage] = useState<number>(0);
-	const [, _rerender] = useState({});
-	const rerender = useCallback(() => _rerender({}), [_rerender]);
 
 	const [isDraggingOver, setIsDraggingOver] = useState(false);
 
@@ -33,6 +36,8 @@ function TileEditor({
 
 	const loadImages = useCallback(
 		async function loadImages(files: Iterable<File>) {
+			if (!tile) return;
+
 			const promises = Array.from(files).map((file) => {
 				return new Promise<HTMLImageElement>((resolve, reject) => {
 					if (file.type.startsWith('image/')) {
@@ -50,13 +55,13 @@ function TileEditor({
 				});
 			});
 
-			//TODO: don't mutate props
 			const images = await Promise.all(promises);
 
-			tile?.images.push(...images);
-			rerender();
+			setTileProps(tile.id, {
+				images: [...tile.images, ...images],
+			});
 		},
-		[tile, rerender]
+		[tile, setTileProps]
 	);
 
 	const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -136,15 +141,13 @@ function TileEditor({
 						return null;
 					}}
 					onChange={(value) => {
-						tile.name = value;
-						rerender();
+						setTileProps(tile.id, { name: value });
 					}}
 				/>
 				<textarea
 					className="TileEditor__Description"
 					onChange={(e) => {
-						tile.description = e.target.value;
-						rerender();
+						setTileProps(tile.id, { description: e.target.value });
 					}}
 					placeholder="Click to add a description"
 					value={tile.description}
@@ -233,36 +236,48 @@ function TileEditor({
 								label="Right"
 								value={tile.connectionKeys[Side.RIGHT]}
 								onChange={(value) => {
-									//TODO: Don't mutate props
-									tile.connectionKeys[Side.RIGHT] = value;
-									rerender();
+									setTileProps(tile.id, {
+										connectionKeys: {
+											...tile.connectionKeys,
+											[Side.RIGHT]: value,
+										},
+									});
 								}}
 							/>
 							<ConnectionSelector
 								label="Top"
 								value={tile.connectionKeys[Side.TOP]}
 								onChange={(value) => {
-									//TODO: Don't mutate props
-									tile.connectionKeys[Side.TOP] = value;
-									rerender();
+									setTileProps(tile.id, {
+										connectionKeys: {
+											...tile.connectionKeys,
+											[Side.TOP]: value,
+										},
+									});
 								}}
 							/>
 							<ConnectionSelector
 								label="Left"
 								value={tile.connectionKeys[Side.LEFT]}
 								onChange={(value) => {
-									//TODO: Don't mutate props
-									tile.connectionKeys[Side.LEFT] = value;
-									rerender();
+									setTileProps(tile.id, {
+										connectionKeys: {
+											...tile.connectionKeys,
+											[Side.LEFT]: value,
+										},
+									});
 								}}
 							/>
 							<ConnectionSelector
 								label="Bottom"
 								value={tile.connectionKeys[Side.BOTTOM]}
 								onChange={(value) => {
-									//TODO: Don't mutate props
-									tile.connectionKeys[Side.BOTTOM] = value;
-									rerender();
+									setTileProps(tile.id, {
+										connectionKeys: {
+											...tile.connectionKeys,
+											[Side.BOTTOM]: value,
+										},
+									});
 								}}
 							/>
 
@@ -271,8 +286,9 @@ function TileEditor({
 								type="checkbox"
 								checked={tile.canBeRotated}
 								onChange={(e) => {
-									tile.canBeRotated = e.target.checked;
-									rerender();
+									setTileProps(tile.id, {
+										canBeRotated: e.target.checked,
+									});
 								}}
 							/>
 						</div>

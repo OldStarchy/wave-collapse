@@ -279,6 +279,18 @@ function App() {
 								/>
 								<TileEditor
 									tile={selectedTile}
+									setTileProps={(id, props) => {
+										setTileTypes((types) => {
+											const newTypes = {
+												...types,
+												[id]: {
+													...types[id],
+													...props,
+												},
+											};
+											return newTypes;
+										});
+									}}
 									hasOtherTiles={
 										Object.keys(tileTypes).length > 0
 									}

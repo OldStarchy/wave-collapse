@@ -1,6 +1,6 @@
 import { solid } from '@fortawesome/fontawesome-svg-core/import.macro';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { InputHTMLAttributes, useCallback, useState } from 'react';
+import { InputHTMLAttributes, useCallback, useEffect, useState } from 'react';
 import './BufferedInput.css';
 
 function BufferedInput({
@@ -29,7 +29,7 @@ function BufferedInput({
 		[validator]
 	);
 
-	useCallback(() => {
+	useEffect(() => {
 		setBuffer(value);
 	}, [value]);
 

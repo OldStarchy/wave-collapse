@@ -78,6 +78,7 @@ function App() {
 	const selectedTile = selectedTileType ? tileTypes[selectedTileType] : null;
 
 	useEffect(() => {
+		setWaveField({});
 		setIsPlaying(false);
 	}, [tileTypes]);
 

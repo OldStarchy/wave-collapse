@@ -374,12 +374,17 @@ namespace WaveFieldResolver {
 			return field;
 		}
 
+		let newField = {
+			...field,
+		};
+		delete newField[getKey(position)];
+
 		const connectedTiles: Record<TileKey, Tile> = {};
 
 		for (const globalDirection of Side.sides) {
 			const offset = Side.offset[globalDirection];
 			const connectedTile = getTile(
-				field,
+				newField,
 				addCoordinates(position, offset)
 			);
 
@@ -392,9 +397,8 @@ namespace WaveFieldResolver {
 		}
 
 		return {
-			...field,
+			...newField,
 			...connectedTiles,
-			[getKey(position)]: undefined,
 		};
 	}
 }

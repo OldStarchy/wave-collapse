@@ -3,228 +3,186 @@ import TileState from './model/TileState';
 import TileType from './model/TileType';
 import Side from './Side';
 
-/**
- * A wave field on a 2D grid.
- */
-class WaveField {
-	public readonly tileset: Readonly<Set<TileType>>;
+export type Coordinate = { x: number; y: number };
+export type TileKey = `${number}/${number}`;
+export type WaveField = Readonly<Record<TileKey, Readonly<Tile>>>;
+export type TileSet = Readonly<Record<TileType['id'], TileType>>;
 
-	protected field: Map<`${number}-${number}`, Tile>;
-
-	public onChange: (() => void) | null = null;
-
-	public constructor(tileset: Set<TileType>) {
-		this.tileset = tileset;
-		this.field = new Map();
+namespace WaveFieldResolver {
+	function getKey(position: Coordinate): TileKey;
+	function getKey(tile: Tile): TileKey;
+	function getKey(tileOrPosition: Tile | Coordinate): TileKey {
+		const position =
+			'position' in tileOrPosition
+				? tileOrPosition.position
+				: tileOrPosition;
+		return `${position.x}/${position.y}`;
 	}
 
-	public forEach(callback: (tile: Tile) => void): void {
-		this.field.forEach(callback);
+	function addCoordinates(
+		position: Coordinate,
+		offset: Coordinate
+	): Coordinate {
+		return { x: position.x + offset.x, y: position.y + offset.y };
 	}
 
-	protected *getDefaultTileState() {
-		const types = this.tileset.values();
+	export function getTile(
+		field: WaveField,
+		position: Coordinate
+	): Tile | undefined {
+		const key = getKey(position);
+		return field[key];
+	}
 
-		let result = types.next();
-		while (!result.done) {
-			yield { tileType: result.value, rotation: 0 };
-			if (result.value.canBeRotated) {
-				yield { tileType: result.value, rotation: 1 };
-				yield { tileType: result.value, rotation: 2 };
-				yield { tileType: result.value, rotation: 3 };
+	export function setTile(
+		field: WaveField,
+		tile: Tile
+	): [newField: WaveField, newTile: Tile] {
+		const existing = getTile(field, tile.position);
+
+		if (tile === existing) return [field, existing];
+
+		const newTile = {
+			...existing,
+			...tile,
+		};
+
+		return [
+			{
+				...field,
+				[getKey(tile)]: newTile,
+			},
+			newTile,
+		];
+	}
+
+	function makeTile(
+		field: WaveField,
+		position: Coordinate,
+		tileset: TileSet
+	): [newField: WaveField, newTile: Tile] {
+		const tile: Tile = {
+			position: { ...position },
+			dirty: false,
+			superState: getDefaultTileSuperState(tileset),
+		};
+
+		return setTile(field, tile);
+	}
+
+	function getOrMakeTile(
+		field: WaveField,
+		position: Coordinate,
+		tileset: TileSet
+	): [newField: WaveField, newTile: Tile] {
+		const existing = getTile(field, position);
+
+		if (existing) return [field, existing];
+
+		return makeTile(field, position, tileset);
+	}
+
+	export function setTileState(
+		field: WaveField,
+		position: Coordinate,
+		state: TileState,
+		tileset: TileSet
+	): [newField: WaveField, newTile: Tile] {
+		let [newField, newTile] = getOrMakeTile(field, position, tileset);
+
+		if (newTile.superState.length === 1 && newTile.superState[0] === state)
+			return [newField, newTile];
+
+		[newField, newTile] = setTile(newField, {
+			...newTile,
+			dirty: true,
+			superState: [state],
+		});
+
+		newField = propagateState(newField, position, tileset);
+
+		return [newField, getTile(newField, position)!];
+	}
+
+	export function getDefaultTileSuperState(tileset: TileSet): TileState[] {
+		const states = [];
+
+		const types = Object.values(tileset);
+
+		for (const type of types) {
+			states.push({ tileType: type, rotation: 0 });
+			if (type.canBeRotated) {
+				states.push({ tileType: type, rotation: 1 });
+				states.push({ tileType: type, rotation: 2 });
+				states.push({ tileType: type, rotation: 3 });
 			}
-			result = types.next();
-		}
-	}
-
-	public getDefaultSuperState() {
-		return Array.from(this.getDefaultTileState());
-	}
-
-	public clear() {
-		this.field.clear();
-		this.onChange?.();
-	}
-
-	public isEmpty() {
-		return this.field.size === 0;
-	}
-
-	public getTile(x: number, y: number): Tile | undefined {
-		const key = `${x}-${y}` as const;
-
-		return this.field.get(key);
-	}
-
-	public getOrMakeTile(x: number, y: number): Tile {
-		const key = `${x}-${y}` as const;
-
-		let tile = this.field.get(key);
-
-		if (tile === undefined) {
-			tile = {
-				superState: Array.from(this.getDefaultTileState()),
-				x,
-				y,
-				dirty: false,
-			};
-
-			this.field.set(key, tile);
 		}
 
-		return tile;
+		return states;
 	}
 
-	public setTileState(x: number, y: number, tileState: TileState): void {
-		const tile = this.getOrMakeTile(x, y);
+	function propagateState(
+		field: WaveField,
+		position: Coordinate,
+		tileset: TileSet,
+		ignoreSide?: Side,
+		limit = 100
+	): WaveField {
+		let newField = field;
 
-		tile.superState = [tileState];
-		this.onChange?.();
-		this.propagateState(tile);
-	}
-	public clearTile(x: number, y: number): void {
-		this.field.delete(`${x}-${y}`);
-	}
+		const queue: { position: Coordinate; ignoreSide?: Side }[] = [];
 
-	public collapse(x: number, y: number): void {
-		const tile = this.getOrMakeTile(x, y);
-
-		if (tile.superState.length < 2) {
-			return;
-		}
-
-		for (const side of Side.sides) {
-			const offset = Side.offset[side];
-			const otherTile = this.getTile(x + offset.x, y + offset.y);
-			if (otherTile) this.propagateState(otherTile, undefined, 4);
-		}
-
-		const weightedStates: [TileState, number][] = [];
-		let totalWeight = 0;
-
-		for (const state of tile.superState) {
-			const weight = this.computeWeight(x, y, state);
-			totalWeight += weight;
-			weightedStates.push([state, weight]);
-		}
-
-		let random = Math.random() * totalWeight;
-
-		for (const [state, weight] of weightedStates) {
-			if (random < weight) {
-				tile.superState = [state];
-				tile.dirty = true;
-
-				this.onChange?.();
+		function enqueue(position: Coordinate, ignoreSide?: Side) {
+			if (
+				queue.some(
+					({ position: queuePosition }) =>
+						position.x === queuePosition.x &&
+						position.y === queuePosition.y
+				)
+			)
 				return;
-			}
 
-			random -= weight;
-		}
-	}
-
-	public step(): void {
-		let tilesToUpdate: Tile[] = [];
-
-		if (this.field.size === 0) {
-			tilesToUpdate = [this.getOrMakeTile(0, 0)];
+			queue.push({ position, ignoreSide });
 		}
 
-		if (tilesToUpdate.length === 0) {
-			tilesToUpdate = Array.from(this.field.values()).reduce<Tile[]>(
-				(tilesToUpdate, value) => {
-					if (
-						value.superState.length > 1 &&
-						(tilesToUpdate.length === 0 ||
-							value.superState.length <
-								tilesToUpdate[0].superState.length)
-					) {
-						return [...tilesToUpdate, value];
-					}
-					return tilesToUpdate;
-				},
-				[]
-			);
+		function dequeue() {
+			return queue.shift();
 		}
 
-		if (tilesToUpdate.length === 0) {
-			tilesToUpdate = Array.from(this.field.values()).reduce<Tile[]>(
-				(tilesToUpdate, value) => {
-					if (value.dirty) {
-						return [...tilesToUpdate, value];
-					}
-					return tilesToUpdate;
-				},
-				[]
-			);
-		}
+		enqueue(position, ignoreSide);
 
-		if (tilesToUpdate.length > 0) {
-			const tileToUpdate =
-				tilesToUpdate[Math.floor(Math.random() * tilesToUpdate.length)];
-
-			this.collapse(tileToUpdate.x, tileToUpdate.y);
-
-			this.propagateState(tileToUpdate, undefined, 1);
-			this.onChange?.();
-		}
-	}
-
-	protected computeWeight(x: number, y: number, state: TileState): number {
-		// Maybe some smarts can go in here later.
-		return 1;
-	}
-
-	protected propagateState(tile: Tile, ignoreSide?: Side, limit = 100): void {
-		const openCoords = new Set<`${number}-${number}`>();
-		const openTiles: { tile: Tile; ignoreSide?: Side }[] = [];
-
-		function pushTile(tile: Tile, ignoreSide?: Side) {
-			const key = `${tile.x}-${tile.y}` as const;
-
-			if (openCoords.has(key)) {
-				return;
-			}
-
-			openCoords.add(key);
-			openTiles.push({ tile, ignoreSide });
-		}
-
-		function shiftTile() {
-			const tile = openTiles.shift()!;
-			openCoords.delete(`${tile.tile.x}-${tile.tile.y}`);
-			return tile;
-		}
-
-		pushTile(tile, ignoreSide);
 		let counter = 0;
 
-		while (openTiles.length > 0) {
-			const { tile, ignoreSide } = shiftTile();
-
-			if (counter > limit) {
-				continue;
-			}
-
+		while (queue.length > 0 && counter < limit) {
 			counter++;
-			tile.dirty = false;
+
+			const { position, ignoreSide } = dequeue()!;
+
+			let tile = getTile(newField, position);
+
+			if (!tile) continue;
 
 			if (tile.superState.length === 0) {
+				console.warn(
+					`Invalid tile state at ${position.x}, ${position.y}`
+				);
 				continue;
 			}
 
-			const modifiedTiles = new Map<Side, Tile>();
+			if (tile.dirty) {
+				[newField, tile] = setTile(newField, {
+					...tile,
+					dirty: false,
+				});
+			}
 
-			// For each global direction
 			for (const globalDirection of Side.sides) {
-				if (ignoreSide && globalDirection === ignoreSide) {
-					continue;
-				}
+				if (globalDirection === ignoreSide) continue;
 
+				// A set of all allowed connections to this side.
 				const allowedConnectionKeys = new Set<string>();
 
 				for (const state of tile.superState) {
-					// Find the counter-rotated connetion side (eg. a tile rotated once, the global "top" will be its local "right")
 					const localSide = Side.rotate(
 						globalDirection,
 						-state.rotation
@@ -233,56 +191,212 @@ class WaveField {
 					const connectionKey =
 						state.tileType.connectionKeys[localSide];
 
-					if (connectionKey !== null)
-						allowedConnectionKeys.add(
-							// the allowed connection needs to be flipped because tiles are conected on opposite sides
-							// eg. top connects to bottom, so keys like "water/sand" get flipped to "sand/water"
-							// idk its hard to explain but just trust me.
-							connectionKey.split('/').reverse().join('/')
-						);
+					if (connectionKey !== null) {
+						//Connecting the "north" side of one tile to the "south" side of another means the connection key needs to be flipped as the sides are 180 degrees rotated.
+						const flippedKey = connectionKey
+							.split('/')
+							.reverse()
+							.join('/');
+						allowedConnectionKeys.add(flippedKey);
+					}
 				}
 
 				const offset = Side.offset[globalDirection];
-
-				const connectedTile = this.getOrMakeTile(
-					tile.x + offset.x,
-					tile.y + offset.y
+				let connectedTile: Tile;
+				[newField, connectedTile] = getOrMakeTile(
+					newField,
+					addCoordinates(position, offset),
+					tileset
 				);
+
 				const backDirection = Side.getOppositeSide(globalDirection);
 
-				// Remove any states from the connected tile that don't connect to this tile
-				for (
-					let index = connectedTile.superState.length - 1;
-					index >= 0;
-					index--
-				) {
-					const connectedState = connectedTile.superState[index];
-					const localBackDirection = Side.rotate(
-						backDirection,
-						-connectedState.rotation
-					);
-					const connectionKey =
-						connectedState.tileType.connectionKeys[
-							localBackDirection
-						];
+				// Remove any states that don't connect to one of the allowed connections
+				const newSuperState = connectedTile.superState.filter(
+					(state) => {
+						const localSide = Side.rotate(
+							backDirection,
+							-state.rotation
+						);
 
-					if (
-						connectionKey === null ||
-						!allowedConnectionKeys.has(connectionKey)
-					) {
-						connectedTile.superState.splice(index, 1);
-						modifiedTiles.set(backDirection, connectedTile);
+						const connectionKey =
+							state.tileType.connectionKeys[localSide];
+
+						if (connectionKey === null)
+							return allowedConnectionKeys.size === 0;
+
+						return allowedConnectionKeys.has(connectionKey);
 					}
+				);
+
+				if (newSuperState.length === connectedTile.superState.length) {
+					continue;
+				}
+
+				[newField, connectedTile] = setTile(newField, {
+					...connectedTile,
+					dirty: true,
+					superState: newSuperState,
+				});
+
+				enqueue(addCoordinates(position, offset), backDirection);
+			}
+		}
+
+		return newField;
+	}
+
+	export function collapse(
+		field: WaveField,
+		position: Coordinate,
+		tileset: TileSet
+	): WaveField {
+		let tile = getTile(field, position);
+		if (tile && tile.superState.length < 2) return field;
+
+		let newField = field;
+
+		// Check connections from adjacent tiles
+		for (const globalDirection of Side.sides) {
+			const offset = Side.offset[globalDirection];
+			const connectedTile = getTile(
+				newField,
+				addCoordinates(position, offset)
+			);
+			if (connectedTile && connectedTile.dirty)
+				newField = propagateState(
+					newField,
+					addCoordinates(position, offset),
+					tileset
+				);
+		}
+
+		[newField, tile] = getOrMakeTile(newField, position, tileset);
+
+		const weightedStates: [TileState, number][] = [];
+		let totalWeight = 0;
+
+		for (const state of tile.superState) {
+			const weight = computeWeight(field, position, state);
+			totalWeight += weight;
+			weightedStates.push([state, weight]);
+		}
+
+		let random = Math.random() * totalWeight;
+
+		for (const [state, weight] of weightedStates) {
+			if (random < weight) {
+				[newField] = setTile(newField, {
+					...tile,
+					dirty: true,
+					superState: [state],
+				});
+
+				break;
+			}
+
+			random -= weight;
+		}
+
+		if (newField === field) {
+			return field;
+		}
+
+		return propagateState(newField, tile.position, tileset);
+	}
+
+	function computeWeight(
+		field: WaveField,
+		position: Coordinate,
+		state: TileState
+	): number {
+		// Maybe some smarts can go in here later.
+		return 1;
+	}
+
+	export function collapseOne(field: WaveField, tileset: TileSet) {
+		if (Object.keys(field).length === 0) {
+			[field] = makeTile(field, { x: 0, y: 0 }, tileset);
+		}
+
+		// Find the tiles with the least number of states more than 1
+		const tilesToUpdate = Object.values(field).reduce((tiles, tile) => {
+			if (tile.superState.length <= 1) {
+				return tiles;
+			}
+
+			if (tiles.length === 0) {
+				tiles.push(tile);
+				return tiles;
+			}
+
+			const lastTile = tiles[tiles.length - 1];
+
+			// Prefer dirty tiles
+			if (tile.dirty) {
+				if (!lastTile.dirty) {
+					return [tile];
 				}
 			}
 
-			// Propagate the state to the connected tiles
-			modifiedTiles.forEach((tile, side) => {
-				tile.dirty = true;
-				pushTile(tile, side);
-			});
+			if (!tile.dirty) {
+				if (lastTile.dirty) {
+					return tiles;
+				}
+			}
+
+			// Prefer tiles with the least number of states
+			if (tile.superState.length < lastTile.superState.length) {
+				return [tile];
+			}
+
+			if (tile.superState.length === lastTile.superState.length) {
+				tiles.push(tile);
+			}
+
+			return tiles;
+		}, [] as Tile[]);
+
+		if (tilesToUpdate.length === 0) {
+			return field;
 		}
+
+		const tile =
+			tilesToUpdate[Math.floor(Math.random() * tilesToUpdate.length)];
+
+		return collapse(field, tile.position, tileset);
+	}
+
+	export function deleteTile(field: WaveField, position: Coordinate) {
+		const tile = getTile(field, position);
+
+		if (!tile) {
+			return field;
+		}
+
+		const connectedTiles: Record<TileKey, Tile> = {};
+
+		for (const globalDirection of Side.sides) {
+			const offset = Side.offset[globalDirection];
+			const connectedTile = getTile(
+				field,
+				addCoordinates(position, offset)
+			);
+
+			if (connectedTile) {
+				connectedTiles[getKey(connectedTile)] = {
+					...connectedTile,
+					dirty: true,
+				};
+			}
+		}
+
+		return {
+			...field,
+			...connectedTiles,
+			[getKey(position)]: undefined,
+		};
 	}
 }
 
-export default WaveField;
+export default WaveFieldResolver;

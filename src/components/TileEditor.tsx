@@ -1,5 +1,5 @@
-import { solid } from '@fortawesome/fontawesome-svg-core/import.macro';
-import React, { createRef, useCallback, useEffect, useState } from 'react';
+import {solid} from '@fortawesome/fontawesome-svg-core/import.macro';
+import React, {createRef, useCallback, useEffect, useState} from 'react';
 import DragContext from '../context/DragContext';
 import TileType from '../model/TileType';
 import Side from '../Side';
@@ -15,7 +15,7 @@ function TileEditor({
 	//TODO: Move this to context
 	hasOtherTiles,
 }: {
-	tile: TileType | undefined;
+	tile: TileType | null;
 	hasOtherTiles: boolean;
 }) {
 	const [selectedImage, setSelectedImage] = useState<number>(0);

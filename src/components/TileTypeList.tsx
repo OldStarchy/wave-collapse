@@ -9,9 +9,9 @@ function TileTypeList({
 	setSelectedTileType,
 	onAddTileButtonClick,
 }: {
-	tiles: Set<TileTypeModel>;
+	tiles: Record<TileTypeModel['id'], TileTypeModel>;
 	selectedTileType: string | undefined;
-	setSelectedTileType: (tileType: string | undefined) => void;
+	setSelectedTileType: (tileType: TileTypeModel['id'] | undefined) => void;
 	onAddTileButtonClick: () => void;
 }) {
 	return (
@@ -21,12 +21,12 @@ function TileTypeList({
 				setSelectedTileType(undefined);
 			}}
 		>
-			{Array.from(tiles).map((tile, i) => (
+			{Object.values(tiles).map((tile) => (
 				<TileType
-					key={i}
+					key={tile.id}
 					{...tile}
-					selected={selectedTileType === tile.name}
-					onClick={() => setSelectedTileType(tile.name)}
+					selected={selectedTileType === tile.id}
+					onClick={() => setSelectedTileType(tile.id)}
 				/>
 			))}
 

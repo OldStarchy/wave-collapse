@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import ConfigContext, {
 	AppConfig,
 	defaultConfig,
@@ -6,21 +7,66 @@ import ConfigContext, {
 import DragContext from '../context/DragContext';
 import TileType from '../model/TileType';
 import Side from '../Side';
-import WaveField from '../WaveField';
+import WaveFieldResolver, { WaveField } from '../WaveField';
 import './App.css';
 import MapView from './MapView';
 import ProgressBar from './ProgressBar';
 import TileEditor from './TileEditor';
 import TileTypeList from './TileTypeList';
 
+function useUndo<TState>(state: TState, setState: (state: TState) => void) {
+	const history = useRef({ history: [] as TState[], head: 0 });
+
+	useEffect(() => {
+		if (history.current.history[history.current.head] !== state) {
+			history.current.history.splice(
+				history.current.head + 1,
+				Infinity,
+				state
+			);
+			history.current.head = history.current.history.length - 1;
+		}
+	}, [state]);
+
+	const canUndo = useCallback(() => history.current.head > 0, []);
+	const canRedo = useCallback(
+		() => history.current.head < history.current.history.length - 1,
+		[]
+	);
+
+	const undo = useCallback(() => {
+		if (history.current.head === 0) {
+			return;
+		}
+
+		history.current.head--;
+		setState(history.current.history[history.current.head]);
+	}, [setState]);
+
+	const redo = useCallback(() => {
+		if (history.current.head === history.current.history.length - 1) {
+			return;
+		}
+
+		history.current.head++;
+		setState(history.current.history[history.current.head]);
+	}, [setState]);
+
+	return { canUndo, canRedo, undo, redo };
+}
+
 function App() {
 	const [selectedTileType, setSelectedTileType] = useState<
-		string | undefined
+		TileType['id'] | undefined
 	>(undefined);
 
 	const [config, setConfig] = useState<AppConfig>(defaultConfig);
-	const [tileTypes, setTileTypes] = useState<TileType[]>([]);
-	const map = useMemo(() => new WaveField(new Set(tileTypes)), [tileTypes]);
+	const [tileTypes, setTileTypes] = useState<
+		Record<TileType['id'], TileType>
+	>({});
+	const [waveField, setWaveField] = useState<WaveField>({});
+
+	const mapHistory = useUndo(waveField, setWaveField);
 
 	const [dragCounter, setDragCounter] = useState(0);
 	const [imageLoadProgress, setImageLoadProgress] = useState(1);
@@ -29,20 +75,20 @@ function App() {
 
 	const loading = imageLoadProgress < 1;
 
-	const selectedTile = Array.from(tileTypes).find(
-		(t) => t.name === selectedTileType
-	);
+	const selectedTile = selectedTileType ? tileTypes[selectedTileType] : null;
 
 	useEffect(() => {
 		setIsPlaying(false);
-	}, [map, tileTypes]);
+	}, [tileTypes]);
 
 	useEffect(() => {
 		let timeout: number | undefined;
 
 		const animate: TimerHandler = () => {
 			if (isPlaying) {
-				map.step();
+				setWaveField(
+					WaveFieldResolver.collapseOne(waveField, tileTypes)
+				);
 				timeout = setTimeout(animate, 1000 / config.autogenFps);
 			}
 		};
@@ -56,10 +102,12 @@ function App() {
 				clearTimeout(timeout);
 			}
 		};
-	}, [isPlaying, map, config]);
+	}, [isPlaying, config, waveField, tileTypes]);
 
 	const save = () => {
-		const data = JSON.stringify(tileTypes.map(prepareTileTypeForSave));
+		const data = JSON.stringify(
+			Object.values(tileTypes).map(prepareTileTypeForSave)
+		);
 		const blob = new Blob([data], { type: 'application/json' });
 		const url = URL.createObjectURL(blob);
 		const link = document.createElement('a');
@@ -77,8 +125,18 @@ function App() {
 			const file = (e.target as HTMLInputElement).files![0];
 			const reader = new FileReader();
 			reader.onload = (e) => {
-				const data = JSON.parse(e.target!.result as string);
-				setTileTypes(data.map(createTileTypeFromSave));
+				const data = JSON.parse(
+					e.target!.result as string
+				) as ReturnType<typeof prepareTileTypeForSave>[];
+				setTileTypes(
+					data.reduce((types, type) => {
+						const loadedType = createTileTypeFromSave(type);
+						return {
+							...types,
+							[loadedType.id]: loadedType,
+						};
+					}, {} as Record<TileType['id'], TileType>)
+				);
 			};
 			reader.readAsText(file);
 		};
@@ -110,23 +168,47 @@ function App() {
 						}
 					>
 						<MapView
-							map={map}
+							waveField={waveField}
+							tileset={tileTypes}
 							onClickPosition={(x, y, button) => {
 								if (button === 0) {
 									if (selectedTile) {
-										map.setTileState(x, y, {
-											tileType: selectedTile,
-											rotation: 0,
-										});
+										const [newField] =
+											WaveFieldResolver.setTileState(
+												waveField,
+												{ x, y },
+												{
+													tileType: selectedTile,
+													rotation: 0,
+												},
+												tileTypes
+											);
+
+										setWaveField(newField);
 									}
 								} else if (button === 1) {
-									map.collapse(x, y);
+									const newField = WaveFieldResolver.collapse(
+										waveField,
+										{ x, y },
+										tileTypes
+									);
+									setWaveField(newField);
 								} else if (button === 2) {
-									map.clearTile(x, y);
+									const newField =
+										WaveFieldResolver.deleteTile(
+											waveField,
+											{ x, y }
+										);
+									setWaveField(newField);
 								}
 							}}
+							mapHistory={mapHistory}
 							onStepButtonClick={() => {
-								map.step();
+								const newField = WaveFieldResolver.collapseOne(
+									waveField,
+									tileTypes
+								);
+								setWaveField(newField);
 								setIsPlaying(false);
 							}}
 							onPlayButtonClick={() => {
@@ -134,7 +216,7 @@ function App() {
 							}}
 							onClearButtonClick={() => {
 								if (window.confirm('Are you sure?')) {
-									map.clear();
+									setWaveField({});
 									setIsPlaying(false);
 								}
 							}}
@@ -145,7 +227,7 @@ function App() {
 							onNewButtonClick={() => {
 								//TODO: Don't use ugly window.confirm
 								if (window.confirm('Are you sure?')) {
-									setTileTypes([]);
+									setTileTypes({});
 									setIsPlaying(false);
 								}
 							}}
@@ -155,38 +237,51 @@ function App() {
 							<>
 								{/* TODO: make the tile editor and tile type list collapsible to make map view bigger */}
 								<TileTypeList
-									tiles={new Set(tileTypes)}
+									tiles={tileTypes}
 									selectedTileType={selectedTileType}
 									setSelectedTileType={setSelectedTileType}
 									onAddTileButtonClick={() => {
 										if (
-											map.isEmpty() ||
+											Object.keys(waveField).length ===
+												0 ||
 											window.confirm(
 												'This will clear the map. Continue?'
 											)
 										) {
-											setTileTypes((types) => [
-												...types,
-												{
-													id: Date.now().toFixed(16),
-													name: `tile${types.length}`,
-													description: '',
-													images: [],
-													canBeRotated: false,
-													connectionKeys: {
-														[Side.TOP]: 'grass',
-														[Side.BOTTOM]: 'grass',
-														[Side.LEFT]: 'grass',
-														[Side.RIGHT]: 'grass',
-													},
-												},
-											]);
+											setTileTypes((types) => {
+												let nameSuffix =
+													Object.keys(types).length;
+												let newName: string;
+												do {
+													newName = `tile ${nameSuffix}`;
+												} while (
+													Object.values(types).some(
+														// eslint-disable-next-line no-loop-func
+														(type) =>
+															type.name ===
+															newName
+													) &&
+													nameSuffix++
+												);
+
+												const newType = {
+													...tileTypeDefaults(),
+													name: newName,
+												};
+
+												return {
+													...types,
+													[newType.id]: newType,
+												};
+											});
 										}
 									}}
 								/>
 								<TileEditor
 									tile={selectedTile}
-									hasOtherTiles={tileTypes.length > 0}
+									hasOtherTiles={
+										Object.keys(tileTypes).length > 0
+									}
 								/>
 							</>
 						)}
@@ -215,16 +310,38 @@ function prepareTileTypeForSave(tileType: TileType) {
 	};
 }
 
+const tileTypeDefaults: () => TileType = () => ({
+	id: newTileTypeId(),
+	name: 'unnamedTile',
+	description: '',
+	canBeRotated: false,
+	connectionKeys: {
+		[Side.TOP]: null,
+		[Side.BOTTOM]: null,
+		[Side.LEFT]: null,
+		[Side.RIGHT]: null,
+	},
+	images: [],
+});
+
 function createTileTypeFromSave(
-	tileType: ReturnType<typeof prepareTileTypeForSave>
+	tileType: Partial<ReturnType<typeof prepareTileTypeForSave>>
 ): TileType {
 	const { images, ...rest } = tileType;
 	return {
+		...tileTypeDefaults(),
+
+		images:
+			images?.map((image) => {
+				const img = new Image();
+				img.src = image;
+				return img;
+			}) ?? [],
+
 		...rest,
-		images: images.map((image) => {
-			const img = new Image();
-			img.src = image;
-			return img;
-		}),
 	};
+}
+
+function newTileTypeId() {
+	return uuidv4();
 }

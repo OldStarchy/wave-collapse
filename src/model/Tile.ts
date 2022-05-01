@@ -1,8 +1,7 @@
 import TileState from './TileState';
 
 export default interface Tile {
-	x: number;
-	y: number;
+	position: { x: number; y: number };
 
 	/*
 		TODO: this should be inverted such that, if any tile changes, all other tiles should be marked as dirty... maybe

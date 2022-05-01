@@ -29,6 +29,10 @@ function BufferedInput({
 		[validator]
 	);
 
+	useCallback(() => {
+		setBuffer(value);
+	}, [value]);
+
 	return (
 		<div
 			className={

@@ -1,7 +1,7 @@
 import { solid } from '@fortawesome/fontawesome-svg-core/import.macro';
 import { createRef, useCallback, useContext, useEffect, useState } from 'react';
 import ConfigContext from '../context/ConfigContext';
-import WaveField from '../WaveField';
+import WaveFieldResolver, { TileSet, WaveField } from '../WaveField';
 import FontAwesomeButton from './FontAwesomeButton';
 import BufferedInput from './input/BufferedInput';
 import './MapView.css';
@@ -33,7 +33,7 @@ function randomFrom2(x: number, y: number) {
 }
 
 function MapView({
-	map,
+	waveField,
 	onClickPosition,
 	onStepButtonClick,
 	settings: _settings = {},
@@ -44,8 +44,10 @@ function MapView({
 	onNewButtonClick,
 	isPlaying,
 	renderUnknownTiles,
+	mapHistory,
+	tileset,
 }: {
-	map: WaveField;
+	waveField: WaveField;
 	onClickPosition: (
 		x: number,
 		y: number,
@@ -58,9 +60,17 @@ function MapView({
 	onSaveButtonClick: () => void;
 	onLoadButtonClick: () => void;
 	onNewButtonClick: () => void;
+	tileset: TileSet;
 
 	isPlaying: boolean;
 	renderUnknownTiles: boolean;
+
+	mapHistory: {
+		canUndo: () => boolean;
+		canRedo: () => boolean;
+		undo: () => void;
+		redo: () => void;
+	};
 }) {
 	const settings = { ...defaultSettings, ..._settings };
 	const mapView = createRef<HTMLCanvasElement>();
@@ -109,17 +119,6 @@ function MapView({
 		fixCanvasSize();
 		draw();
 	}
-
-	useEffect(() => {
-		//TODO: better event handling
-		const thisMap = map;
-		thisMap.onChange = () => {
-			rerender();
-		};
-		return () => {
-			thisMap.onChange = null;
-		};
-	}, [map, rerender]);
 
 	useEffect(() => {
 		if (!mapView.current) return;
@@ -247,11 +246,15 @@ function MapView({
 
 		//draw tiles
 		let renderedTiles = 0;
-		const defaultSuperState = map.getDefaultSuperState();
+		const defaultSuperState =
+			WaveFieldResolver.getDefaultTileSuperState(tileset);
 		for (let x = topLeft.x; x < bottomRight.x; x += TILE_SIZE) {
 			for (let y = topLeft.y; y < bottomRight.y; y += TILE_SIZE) {
 				const superState =
-					map.getTile(x / TILE_SIZE, y / TILE_SIZE)?.superState ??
+					WaveFieldResolver.getTile(waveField, {
+						x: x / TILE_SIZE,
+						y: y / TILE_SIZE,
+					})?.superState ??
 					(renderUnknownTiles ? defaultSuperState : null);
 				if (superState === null) continue;
 
@@ -473,7 +476,7 @@ function MapView({
 							icon={solid('save')}
 							onClick={onSaveButtonClick}
 							title="Save map"
-							disabled={map.tileset.size === 0}
+							disabled={Object.keys(tileset).length === 0}
 						/>
 						<FontAwesomeButton
 							className="MapView__Control"
@@ -492,10 +495,31 @@ function MapView({
 
 						<FontAwesomeButton
 							className="MapView__Control"
+							icon={solid('undo')}
+							onClick={() => {
+								mapHistory.undo();
+							}}
+							title="Undo"
+							disabled={!mapHistory.canUndo()}
+						/>
+						<FontAwesomeButton
+							className="MapView__Control"
+							icon={solid('redo')}
+							onClick={() => {
+								mapHistory.redo();
+							}}
+							title="Redo"
+							disabled={!mapHistory.canRedo()}
+						/>
+
+						<div></div>
+
+						<FontAwesomeButton
+							className="MapView__Control"
 							icon={solid('trash')}
 							onClick={onClearButtonClick}
 							title="Clear map"
-							disabled={map.isEmpty()}
+							disabled={Object.keys(waveField).length === 0}
 						/>
 
 						<div></div>
@@ -504,14 +528,14 @@ function MapView({
 							className="MapView__Control"
 							icon={solid('forward-step')}
 							onClick={onStepButtonClick}
-							disabled={map.tileset.size === 0}
+							disabled={Object.keys(tileset).length === 0}
 							title="Step"
 						/>
 						<FontAwesomeButton
 							className="MapView__Control"
 							icon={isPlaying ? solid('pause') : solid('play')}
 							onClick={onPlayButtonClick}
-							disabled={map.tileset.size === 0}
+							disabled={Object.keys(tileset).length === 0}
 							title={isPlaying ? 'Pause' : 'Play'}
 						/>
 					</div>

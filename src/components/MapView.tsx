@@ -1,5 +1,12 @@
 import { solid } from '@fortawesome/fontawesome-svg-core/import.macro';
-import { createRef, useCallback, useContext, useEffect, useState } from 'react';
+import {
+	createRef,
+	useCallback,
+	useContext,
+	useEffect,
+	useRef,
+	useState,
+} from 'react';
 import ConfigContext from '../context/ConfigContext';
 import WaveFieldResolver, { TileSet, WaveField } from '../WaveField';
 import FontAwesomeButton from './FontAwesomeButton';
@@ -22,14 +29,26 @@ const TRANSLATE_CONTROLS = {
 interface MapViewSettings {
 	drawOrigin: boolean;
 	drawGrid: boolean;
+	clear: boolean;
+	drawMouse: boolean;
 }
 const defaultSettings = {
 	drawOrigin: true,
-	drawGrid: true,
+	drawGrid: false,
+	clear: false,
+	drawMouse: true,
 };
 
 function randomFrom2(x: number, y: number) {
 	return Math.abs(Math.sin(x * 12.9898 + y * 78.233) * 43758.5453123) % 1;
+}
+
+function usePrevious<TValue>(value: TValue) {
+	const ref = useRef<TValue | undefined>(value);
+	useEffect(() => {
+		ref.current = value;
+	}, [value]);
+	return ref.current;
 }
 
 function MapView({
@@ -77,14 +96,15 @@ function MapView({
 
 	const [config, setConfig] = useContext(ConfigContext);
 
-	const [, _rerender] = useState({});
-	const rerender = useCallback(() => _rerender({}), [_rerender]);
-
 	const [offset, setOffset] = useState({ x: 0, y: 0 });
 	const [zoom, setZoomNative] = useState(1);
 
 	const [visualOffset, setVisualOffset] = useState({ x: 0, y: 0 });
 	const [visualZoom, setVisualZoom] = useState(1);
+
+	const previousWaveField = usePrevious(waveField);
+
+	const [canvasSizeIdentity, setCanvasSizeIdentity] = useState({});
 
 	const [mousePosition, setMousePosition] = useState<
 		| undefined
@@ -111,19 +131,20 @@ function MapView({
 		return getComputedStyle(mapView.current!).getPropertyValue(name);
 	}
 
-	function fixCanvasSize() {
-		mapView.current!.width = mapView.current!.clientWidth;
-		mapView.current!.height = mapView.current!.clientHeight;
+	function fixCanvasSize(element: HTMLCanvasElement) {
+		element.width = element.clientWidth;
+		element.height = element.clientHeight;
 	}
+
 	function onResize() {
-		fixCanvasSize();
-		draw();
+		if (!mapView.current) return;
+		fixCanvasSize(mapView.current);
+		draw(true);
 	}
 
 	useEffect(() => {
 		if (!mapView.current) return;
 
-		fixCanvasSize();
 		draw();
 
 		window.addEventListener('resize', onResize);
@@ -131,6 +152,25 @@ function MapView({
 			window.removeEventListener('resize', onResize);
 		};
 	});
+
+	useEffect(() => {
+		onResize();
+	}, [canvasSizeIdentity]);
+
+	useEffect(() => {
+		if (!mapView.current) return;
+
+		const mapViewCurrent = mapView.current;
+
+		const observer = new ResizeObserver((entries, observer) => {
+			setCanvasSizeIdentity({});
+		});
+		observer.observe(mapViewCurrent);
+
+		return () => {
+			observer.disconnect();
+		};
+	}, [mapView.current]);
 
 	//animate zoom
 	useEffect(() => {
@@ -187,15 +227,26 @@ function MapView({
 		{ x: number; y: number } | undefined
 	>(undefined);
 
-	function draw() {
+	const previousZoom = usePrevious(visualZoom);
+	const previousOffset = usePrevious(visualOffset);
+	const previousMousePos = usePrevious(mousePos);
+
+	function draw(forceRedraw = false) {
 		const canvas = mapView.current!;
 		const ctx = mapView.current?.getContext('2d');
 		if (!ctx) return;
 
+		const viewHasMoved =
+			previousZoom !== visualZoom || previousOffset !== visualOffset;
+
+		forceRedraw = forceRedraw || viewHasMoved;
+
 		ctx.imageSmoothingEnabled = false;
 
 		ctx.fillStyle = cssVar('--color-background');
-		ctx.fillRect(0, 0, canvas.width, canvas.height);
+		if (settings.clear || viewHasMoved) {
+			ctx.fillRect(0, 0, canvas.width, canvas.height);
+		}
 
 		ctx.save();
 
@@ -245,66 +296,109 @@ function MapView({
 		}
 
 		//draw tiles
-		let renderedTiles = 0;
-		const defaultSuperState =
-			WaveFieldResolver.getDefaultTileSuperState(tileset);
-		for (let x = topLeft.x; x < bottomRight.x; x += TILE_SIZE) {
-			for (let y = topLeft.y; y < bottomRight.y; y += TILE_SIZE) {
-				const superState =
-					WaveFieldResolver.getTile(waveField, {
+		if (previousWaveField !== waveField || forceRedraw) {
+			let renderedTiles = 0;
+
+			const defaultSuperState =
+				WaveFieldResolver.getDefaultTileSuperState(tileset);
+			for (let x = topLeft.x; x < bottomRight.x; x += TILE_SIZE) {
+				for (let y = topLeft.y; y < bottomRight.y; y += TILE_SIZE) {
+					const tile = WaveFieldResolver.getTile(waveField, {
 						x: x / TILE_SIZE,
 						y: y / TILE_SIZE,
-					})?.superState ??
-					(renderUnknownTiles ? defaultSuperState : null);
-				if (superState === null) continue;
+					});
 
-				// map.forEach(({ superState, x, y }) => {
-				// 	if (x * TILE_SIZE < topLeft.x || x * TILE_SIZE > bottomRight.x)
-				// 		return;
-				// 	if (y * TILE_SIZE < topLeft.y || y * TILE_SIZE > bottomRight.y)
-				// 		return;
+					const prevState =
+						previousWaveField &&
+						WaveFieldResolver.getTile(previousWaveField, {
+							x: x / TILE_SIZE,
+							y: y / TILE_SIZE,
+						});
 
-				renderedTiles++;
-				superState.forEach(({ tileType, rotation }, i) => {
-					//psudorandom based on x and y
-					if (tileType.images.length === 0) {
-						ctx.beginPath();
-						ctx.arc(
-							x + 0.5 * TILE_SIZE,
-							y + 0.5 * TILE_SIZE,
-							0.5 * 0.5 * TILE_SIZE,
-							0,
-							2 * Math.PI
-						);
-						//random color based off tile name
-						ctx.fillStyle =
-							'#' +
-							Math.abs(stringHash(tileType.name))
-								.toString(16)
-								.substring(0, 6) +
-							((255 / (i + 1)) | 0).toString(16);
-						ctx.strokeStyle = cssVar('--color-border');
-						// ctx.stroke();
-						ctx.fill();
-					} else {
-						const imageIndex =
-							(randomFrom2(x, y) * tileType.images.length) | 0;
-						const image = tileType.images[imageIndex];
+					let shouldDrawTile = false;
+					if (forceRedraw) shouldDrawTile = true;
+					else if (tile !== prevState) shouldDrawTile = true;
+					else if (previousMousePos && tile) {
+						const prevMouse = inverseMatrix.transformPoint({
+							x: previousMousePos.x,
+							y: previousMousePos.y,
+						});
 
-						ctx.save();
-						ctx.translate(x + TILE_SIZE / 2, y + TILE_SIZE / 2);
-						ctx.rotate(-(rotation * Math.PI) / 2);
-						ctx.translate(-TILE_SIZE / 2, -TILE_SIZE / 2);
-						ctx.globalAlpha = 1 / (i + 1);
-						ctx.drawImage(image, 0, 0, TILE_SIZE, TILE_SIZE);
-						ctx.restore();
+						const tileX = Math.floor(prevMouse.x / TILE_SIZE);
+						const tileY = Math.floor(prevMouse.y / TILE_SIZE);
+
+						if (
+							tileX === tile.position.x &&
+							tileY === tile.position.y
+						) {
+							shouldDrawTile = true;
+						}
 					}
-				});
-				// });
+
+					if (!shouldDrawTile) continue;
+
+					const superState =
+						tile?.superState ??
+						(renderUnknownTiles ? defaultSuperState : null);
+
+					if (
+						!tile ||
+						superState === null ||
+						superState === defaultSuperState
+					) {
+						ctx.clearRect(x, y, TILE_SIZE, TILE_SIZE);
+						continue;
+					}
+
+					// map.forEach(({ superState, x, y }) => {
+					// 	if (x * TILE_SIZE < topLeft.x || x * TILE_SIZE > bottomRight.x)
+					// 		return;
+					// 	if (y * TILE_SIZE < topLeft.y || y * TILE_SIZE > bottomRight.y)
+					// 		return;
+
+					renderedTiles++;
+					superState.forEach(({ tileType, rotation }, i) => {
+						//psudorandom based on x and y
+						if (tileType.images.length === 0) {
+							ctx.beginPath();
+							ctx.arc(
+								x + 0.5 * TILE_SIZE,
+								y + 0.5 * TILE_SIZE,
+								0.5 * 0.5 * TILE_SIZE,
+								0,
+								2 * Math.PI
+							);
+							//random color based off tile name
+							ctx.fillStyle =
+								'#' +
+								Math.abs(stringHash(tileType.name))
+									.toString(16)
+									.substring(0, 6) +
+								((255 / (i + 1)) | 0).toString(16);
+							ctx.strokeStyle = cssVar('--color-border');
+							// ctx.stroke();
+							ctx.fill();
+						} else {
+							const imageIndex =
+								(randomFrom2(x, y) * tileType.images.length) |
+								0;
+							const image = tileType.images[imageIndex];
+
+							ctx.save();
+							ctx.translate(x + TILE_SIZE / 2, y + TILE_SIZE / 2);
+							ctx.rotate(-(rotation * Math.PI) / 2);
+							ctx.translate(-TILE_SIZE / 2, -TILE_SIZE / 2);
+							ctx.globalAlpha = 1 / (i + 1);
+							ctx.drawImage(image, 0, 0, TILE_SIZE, TILE_SIZE);
+							ctx.restore();
+						}
+					});
+					// });
+				}
 			}
+			//TODO: report renderedTiles to diagnostics
+			console.log(renderedTiles);
 		}
-		//TODO: report renderedTiles to diagnostics
-		// console.log(renderedTiles);
 
 		//highlight tile under mouse
 		if (mousePosition) {
@@ -317,27 +411,29 @@ function MapView({
 				setMousePos(mouse);
 			}
 
-			const tileX = Math.floor(mouse.x / TILE_SIZE);
-			const tileY = Math.floor(mouse.y / TILE_SIZE);
+			if (settings.drawMouse) {
+				const tileX = Math.floor(mouse.x / TILE_SIZE);
+				const tileY = Math.floor(mouse.y / TILE_SIZE);
 
-			ctx.strokeStyle = cssVar('--color-grid');
-			ctx.fillStyle = cssVar('--color-highlight-background');
-			ctx.lineWidth = 2;
-			ctx.beginPath();
-			ctx.rect(
-				tileX * TILE_SIZE,
-				tileY * TILE_SIZE,
-				TILE_SIZE,
-				TILE_SIZE
-			);
-			ctx.stroke();
-			ctx.fill();
+				ctx.strokeStyle = cssVar('--color-grid');
+				ctx.fillStyle = cssVar('--color-highlight-background');
+				ctx.lineWidth = 2;
+				ctx.beginPath();
+				ctx.rect(
+					tileX * TILE_SIZE,
+					tileY * TILE_SIZE,
+					TILE_SIZE,
+					TILE_SIZE
+				);
+				ctx.stroke();
+				// ctx.fill();
 
-			// ctx.drawImage(
-			// 	images['sand0'],
-			// 	tileX * TILE_SIZE,
-			// 	tileY * TILE_SIZE
-			// );
+				// ctx.drawImage(
+				// 	images['sand0'],
+				// 	tileX * TILE_SIZE,
+				// 	tileY * TILE_SIZE
+				// );
+			}
 		} else {
 			setMousePos(undefined);
 		}

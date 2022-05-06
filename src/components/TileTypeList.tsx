@@ -1,4 +1,5 @@
 import { solid } from '@fortawesome/fontawesome-svg-core/import.macro';
+import classNames from 'classnames';
 import { default as TileTypeModel } from '../model/TileType';
 import FontAwesomeButton from './FontAwesomeButton';
 import './TileTypeList.scss';
@@ -8,15 +9,17 @@ function TileTypeList({
 	selectedTileType,
 	setSelectedTileType,
 	onAddTileButtonClick,
+	className,
 }: {
 	tiles: Record<TileTypeModel['id'], TileTypeModel>;
 	selectedTileType: string | undefined;
 	setSelectedTileType: (tileType: TileTypeModel['id'] | undefined) => void;
 	onAddTileButtonClick: () => void;
+	className?: string;
 }) {
 	return (
 		<div
-			className="TileTypeList"
+			className={classNames(className, 'TileTypeList')}
 			onClick={() => {
 				setSelectedTileType(undefined);
 			}}

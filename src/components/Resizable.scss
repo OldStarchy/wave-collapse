@@ -1,0 +1,53 @@
+.Resizable {
+	$b: &;
+
+	--draghandle-width: 10px;
+
+	display: grid;
+	grid-template-areas:
+		'left top right'
+		'left center right'
+		'left bottom right';
+
+	grid-template-rows: auto 1fr auto;
+	grid-template-columns: auto 1fr auto;
+
+	&__Content {
+		grid-area: center;
+		display: grid;
+
+		min-width: 0;
+		min-height: 0;
+	}
+
+	&__Handle {
+		background-color: var(--color-highlight-background-solid);
+		#{$b}--top &,
+		#{$b}--bottom & {
+			cursor: ns-resize;
+			height: var(--draghandle-width);
+		}
+
+		#{$b}--left &,
+		#{$b}--right & {
+			cursor: ew-resize;
+			width: var(--draghandle-width);
+		}
+
+		#{$b}--top & {
+			grid-area: top;
+		}
+
+		#{$b}--bottom & {
+			grid-area: bottom;
+		}
+
+		#{$b}--left & {
+			grid-area: left;
+		}
+
+		#{$b}--right & {
+			grid-area: right;
+		}
+	}
+}

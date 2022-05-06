@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+// import EditorWindow from './components/EditorWindow';
 import App from './components/App';
 import './index.css';
 import reportWebVitals from './reportWebVitals';
@@ -10,6 +11,16 @@ const root = ReactDOM.createRoot(
 root.render(
 	<React.StrictMode>
 		<App />
+		{/* <EditorWindow
+			style={{
+				width: '100vw',
+				height: '100vh',
+			}}
+			mainContent={<span>mainContent</span>}
+			leftContent={<span>leftContent</span>}
+			rightContent={<span>rightContent</span>}
+			footerContent={<span>footerContent</span>}
+		/> */}
 	</React.StrictMode>
 );
 

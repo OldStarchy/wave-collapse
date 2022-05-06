@@ -1,5 +1,6 @@
-import {solid} from '@fortawesome/fontawesome-svg-core/import.macro';
-import React, {createRef, useCallback, useEffect, useState} from 'react';
+import { solid } from '@fortawesome/fontawesome-svg-core/import.macro';
+import classNames from 'classnames';
+import React, { createRef, useCallback, useEffect, useState } from 'react';
 import DragContext from '../context/DragContext';
 import TileType from '../model/TileType';
 import Side from '../Side';
@@ -15,6 +16,7 @@ function TileEditor({
 	//TODO: Move this to context
 	hasOtherTiles,
 	setTileProps,
+	className,
 }: {
 	tile: Readonly<TileType> | null;
 	hasOtherTiles: boolean;
@@ -22,6 +24,7 @@ function TileEditor({
 		id: TileType['id'],
 		props: Partial<Omit<TileType, 'id'>>
 	) => void;
+	className?: string;
 }) {
 	const [selectedImage, setSelectedImage] = useState<number>(0);
 
@@ -114,7 +117,7 @@ function TileEditor({
 	}, [handlePaste]);
 
 	return tile ? (
-		<div className="TileEditor">
+		<div className={classNames(className, 'TileEditor')}>
 			<div className="TileEditor__Image">
 				<div className="TileEditor__ImageContainer">
 					{tile.images[selectedImage] && (

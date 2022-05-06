@@ -9,8 +9,10 @@ import TileType from '../model/TileType';
 import Side from '../Side';
 import WaveFieldResolver, { WaveField } from '../WaveField';
 import './App.scss';
+import EditorWindow from './EditorWindow';
 import MapView from './MapView';
 import ProgressBar from './ProgressBar';
+import Resizable from './Resizable';
 import TileEditor from './TileEditor';
 import TileTypeList from './TileTypeList';
 
@@ -146,97 +148,102 @@ function App() {
 
 	return (
 		<ConfigContext.Provider value={[config, setConfig]}>
-			<div
-				className="App"
-				onDragEnter={(e) => {
-					setDragCounter((dragCounter) => dragCounter + 1);
-				}}
-				onDragLeave={(e) => {
-					setDragCounter((dragCounter) => dragCounter - 1);
-				}}
-				onDragEnd={(e) => {
-					setDragCounter(0);
-				}}
-				onDrop={(e) => {
-					setDragCounter(0);
-				}}
-			>
-				<DragContext.Provider value={{ isDragging: dragCounter > 0 }}>
-					<div
-						className={
-							'App__Content' +
-							(config.showGui ? '' : ' App__Content--nogui')
-						}
-					>
-						<MapView
-							waveField={waveField}
-							tileset={tileTypes}
-							onClickPosition={(x, y, button) => {
-								if (button === 0) {
-									if (selectedTile) {
-										const [newField] =
-											WaveFieldResolver.setTileState(
+			<DragContext.Provider value={{ isDragging: dragCounter > 0 }}>
+				<div
+					className="App"
+					onDragEnter={(e) => {
+						setDragCounter((dragCounter) => dragCounter + 1);
+					}}
+					onDragLeave={(e) => {
+						setDragCounter((dragCounter) => dragCounter - 1);
+					}}
+					onDragEnd={(e) => {
+						setDragCounter(0);
+					}}
+					onDrop={(e) => {
+						setDragCounter(0);
+					}}
+				>
+					<EditorWindow
+						className={'App__Content'}
+						mainContent={
+							<MapView
+								waveField={waveField}
+								tileset={tileTypes}
+								onClickPosition={(x, y, button) => {
+									if (button === 0) {
+										if (selectedTile) {
+											const [newField] =
+												WaveFieldResolver.setTileState(
+													waveField,
+													{ x, y },
+													{
+														tileType: selectedTile,
+														rotation: 0,
+													},
+													tileTypes
+												);
+
+											setWaveField(newField);
+										}
+									} else if (button === 1) {
+										const newField =
+											WaveFieldResolver.collapse(
 												waveField,
 												{ x, y },
-												{
-													tileType: selectedTile,
-													rotation: 0,
-												},
 												tileTypes
 											);
-
+										setWaveField(newField);
+									} else if (button === 2) {
+										const newField =
+											WaveFieldResolver.deleteTile(
+												waveField,
+												{ x, y }
+											);
 										setWaveField(newField);
 									}
-								} else if (button === 1) {
-									const newField = WaveFieldResolver.collapse(
-										waveField,
-										{ x, y },
-										tileTypes
-									);
-									setWaveField(newField);
-								} else if (button === 2) {
+								}}
+								mapHistory={mapHistory}
+								onStepButtonClick={() => {
 									const newField =
-										WaveFieldResolver.deleteTile(
+										WaveFieldResolver.collapseOne(
 											waveField,
-											{ x, y }
+											tileTypes
 										);
 									setWaveField(newField);
-								}
-							}}
-							mapHistory={mapHistory}
-							onStepButtonClick={() => {
-								const newField = WaveFieldResolver.collapseOne(
-									waveField,
-									tileTypes
-								);
-								setWaveField(newField);
-								setIsPlaying(false);
-							}}
-							onPlayButtonClick={() => {
-								setIsPlaying((isPlaying) => !isPlaying);
-							}}
-							onClearButtonClick={() => {
-								if (window.confirm('Are you sure?')) {
-									setWaveField({});
 									setIsPlaying(false);
-								}
-							}}
-							//TODO: This should be done via context
-							isPlaying={isPlaying}
-							onSaveButtonClick={save}
-							onLoadButtonClick={load}
-							onNewButtonClick={() => {
-								//TODO: Don't use ugly window.confirm
-								if (window.confirm('Are you sure?')) {
-									setTileTypes({});
-									setIsPlaying(false);
-								}
-							}}
-							renderUnknownTiles={false}
-						/>
-						{config.showGui && (
-							<>
-								{/* TODO: make the tile editor and tile type list collapsible to make map view bigger */}
+								}}
+								onPlayButtonClick={() => {
+									setIsPlaying((isPlaying) => !isPlaying);
+								}}
+								onClearButtonClick={() => {
+									if (window.confirm('Are you sure?')) {
+										setWaveField({});
+										setIsPlaying(false);
+									}
+								}}
+								//TODO: This should be done via context
+								isPlaying={isPlaying}
+								onSaveButtonClick={save}
+								onLoadButtonClick={load}
+								onNewButtonClick={() => {
+									//TODO: Don't use ugly window.confirm
+									if (window.confirm('Are you sure?')) {
+										setTileTypes({});
+										setIsPlaying(false);
+									}
+								}}
+								renderUnknownTiles={false}
+							/>
+						}
+						// leftContent={<div>Left</div>}
+						rightContent={
+							<Resizable
+								direction="left"
+								initialSize={350}
+								minimumSize={200}
+								canMinimize
+							>
 								<TileTypeList
 									tiles={tileTypes}
 									selectedTileType={selectedTileType}
@@ -278,6 +285,16 @@ function App() {
 										}
 									}}
 								/>
+							</Resizable>
+						}
+						footerContent={
+							<Resizable
+								className="EditorWindow__Footer"
+								direction="top"
+								initialSize={350}
+								minimumSize={200}
+								canMinimize
+							>
 								<TileEditor
 									tile={selectedTile}
 									setTileProps={(id, props) => {
@@ -296,12 +313,12 @@ function App() {
 										Object.keys(tileTypes).length > 0
 									}
 								/>
-							</>
-						)}
-					</div>
+							</Resizable>
+						}
+					/>
 					{loading && <ProgressBar progress={imageLoadProgress} />}
-				</DragContext.Provider>
-			</div>
+				</div>
+			</DragContext.Provider>
 		</ConfigContext.Provider>
 	);
 }

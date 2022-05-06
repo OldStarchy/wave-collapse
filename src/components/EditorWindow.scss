@@ -1,0 +1,42 @@
+.EditorWindow {
+	display: grid;
+	grid-template-areas:
+		'left header right'
+		'left main right'
+		'bottom bottom bottom';
+
+	grid-template-rows: auto 1fr auto;
+	grid-template-columns: auto 1fr auto;
+
+	&__MainContent {
+		grid-area: main;
+	}
+
+	&__LeftSidebar {
+		grid-area: left;
+	}
+
+	&__RightSidebar {
+		grid-area: right;
+	}
+
+	&__Footer {
+		grid-area: bottom;
+	}
+
+	&__Header {
+		grid-area: header;
+	}
+
+	&__DragHandle {
+		cursor: move;
+
+		&:hover {
+			cursor: hand;
+		}
+
+		&:active {
+			cursor: grabbing;
+		}
+	}
+}

@@ -1,6 +1,8 @@
 .MapView {
 	--color-grid: var(--color-border);
 
+	position: relative;
+
 	&__Canvas {
 		position: absolute;
 		left: 0;

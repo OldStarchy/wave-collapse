@@ -1,7 +1,8 @@
-import {solid} from '@fortawesome/fontawesome-svg-core/import.macro';
-import {createRef, useCallback, useContext, useEffect, useState} from 'react';
+import { solid } from '@fortawesome/fontawesome-svg-core/import.macro';
+import classNames from 'classnames';
+import { createRef, useCallback, useContext, useEffect, useState } from 'react';
 import ConfigContext from '../context/ConfigContext';
-import WaveFieldResolver, {TileSet, WaveField} from '../WaveField';
+import WaveFieldResolver, { TileSet, WaveField } from '../WaveField';
 import FontAwesomeButton from './FontAwesomeButton';
 import BufferedInput from './input/BufferedInput';
 import './MapView.scss';
@@ -33,6 +34,7 @@ function randomFrom2(x: number, y: number) {
 }
 
 function MapView({
+	className,
 	waveField,
 	onClickPosition,
 	onStepButtonClick,
@@ -47,6 +49,7 @@ function MapView({
 	mapHistory,
 	tileset,
 }: {
+	className?: string;
 	waveField: WaveField;
 	onClickPosition: (
 		x: number,
@@ -347,7 +350,7 @@ function MapView({
 
 	return (
 		<div
-			className="MapView"
+			className={classNames(className, 'MapView')}
 			tabIndex={-1}
 			onKeyDown={(e) => {
 				switch (e.key) {
@@ -420,33 +423,37 @@ function MapView({
 				}}
 			></canvas>
 			<div className="MapView__Controls MapView__Controls--Bottom">
-				Autogen FPS:
-				<BufferedInput
-					validator={(autogenFps) => {
-						if (!/^\d+$/.test(autogenFps)) {
-							return 'Must be a number';
-						}
+				{config.showGui && (
+					<>
+						Autogen FPS:
+						<BufferedInput
+							validator={(autogenFps) => {
+								if (!/^\d+$/.test(autogenFps)) {
+									return 'Must be a number';
+								}
 
-						const n = parseInt(autogenFps);
-						if (n < 1) {
-							return 'Must be greater than 0';
-						}
+								const n = parseInt(autogenFps);
+								if (n < 1) {
+									return 'Must be greater than 0';
+								}
 
-						if (n > 1000) {
-							return 'Max 1000';
-						}
+								if (n > 1000) {
+									return 'Max 1000';
+								}
 
-						return null;
-					}}
-					onChange={(autogenFps) => {
-						setConfig({
-							...config,
-							autogenFps: Number.parseInt(autogenFps),
-						});
-					}}
-					value={config.autogenFps.toString()}
-					placeholder="Autogen FPS"
-				/>
+								return null;
+							}}
+							onChange={(autogenFps) => {
+								setConfig({
+									...config,
+									autogenFps: Number.parseInt(autogenFps),
+								});
+							}}
+							value={config.autogenFps.toString()}
+							placeholder="Autogen FPS"
+						/>
+					</>
+				)}
 				<FontAwesomeButton
 					className="MapView__Control"
 					icon={config.showGui ? solid('eye') : solid('eye-slash')}

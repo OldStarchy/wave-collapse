@@ -35,7 +35,7 @@ function EditorWindow({
 				cloneElement(headerContent, {
 					className: classNames(
 						headerContent.props.className,
-						'EditorWindow__RightSidebar'
+						'EditorWindow__Header'
 					),
 				})}
 
@@ -43,7 +43,7 @@ function EditorWindow({
 				cloneElement(leftContent, {
 					className: classNames(
 						leftContent.props.className,
-						'EditorWindow__RightSidebar'
+						'EditorWindow__LeftSidebar'
 					),
 				})}
 
@@ -59,7 +59,7 @@ function EditorWindow({
 				cloneElement(footerContent, {
 					className: classNames(
 						footerContent.props.className,
-						'EditorWindow__RightSidebar'
+						'EditorWindow__Footer'
 					),
 				})}
 		</section>

@@ -10,6 +10,7 @@ import Side from '../Side';
 import WaveFieldResolver, { WaveField } from '../WaveField';
 import './App.scss';
 import EditorWindow from './EditorWindow';
+import HelpContent from './HelpContent';
 import MapView from './MapView';
 import ProgressBar from './ProgressBar';
 import Resizable from './Resizable';
@@ -236,7 +237,16 @@ function App() {
 								renderUnknownTiles={false}
 							/>
 						}
-						// leftContent={<div>Left</div>}
+						leftContent={
+							<Resizable
+								direction="right"
+								initialSize={350}
+								minimumSize={200}
+								canMinimize
+							>
+								<HelpContent />
+							</Resizable>
+						}
 						rightContent={
 							<Resizable
 								direction="left"

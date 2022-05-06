@@ -3,7 +3,7 @@ import {
 	FontAwesomeIconProps,
 } from '@fortawesome/react-fontawesome';
 import Button from './Button';
-import './FontAwesomeButton.css';
+import './FontAwesomeButton.scss';
 
 function FontAwesomeButton({
 	icon,

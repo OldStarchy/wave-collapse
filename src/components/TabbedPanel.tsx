@@ -1,6 +1,6 @@
 import React, { cloneElement, useState } from 'react';
 import Button from './Button';
-import './TabbedPanel.css';
+import './TabbedPanel.scss';
 
 function TabbedPanel<
 	TTabs extends Record<string, React.ReactElement<{ className?: string }>>

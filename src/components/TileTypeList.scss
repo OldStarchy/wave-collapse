@@ -1,0 +1,51 @@
+.TileTypeList {
+	padding: 0.5rem;
+	overflow-y: scroll;
+	display: grid;
+	align-content: flex-start;
+	gap: 0.5rem;
+
+	&__AddNew {
+		aspect-ratio: auto;
+		height: 4rem;
+	}
+
+	&__Tile {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		grid-template-rows: 1fr 1fr;
+		grid-template-areas:
+			'image name'
+			'image description';
+		border: 1px dashed transparent;
+		background-color: var(--color-background);
+		cursor: pointer;
+		transition: background-color 0.2s ease-in-out,
+			border-color 0.2s ease-in-out;
+
+		&--selected {
+			background-color: var(--color-highlight-background);
+			border-color: var(--color-border);
+		}
+	}
+
+	&__Image {
+		grid-area: image;
+		height: 4rem;
+		aspect-ratio: 1 / 1;
+		padding: 0.5rem;
+	}
+
+	&__ImageContainer {
+		background-color: white;
+		width: 100%;
+		height: 100%;
+
+		> img {
+			width: 100%;
+			height: 100%;
+			object-fit: contain;
+			image-rendering: pixelated;
+		}
+	}
+}

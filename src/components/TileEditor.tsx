@@ -1,5 +1,5 @@
-import { solid } from '@fortawesome/fontawesome-svg-core/import.macro';
-import React, { createRef, useCallback, useEffect, useState } from 'react';
+import {solid} from '@fortawesome/fontawesome-svg-core/import.macro';
+import React, {createRef, useCallback, useEffect, useState} from 'react';
 import DragContext from '../context/DragContext';
 import TileType from '../model/TileType';
 import Side from '../Side';
@@ -8,7 +8,7 @@ import FontAwesomeButton from './FontAwesomeButton';
 import Hidden from './Hidden';
 import BufferedInput from './input/BufferedInput';
 import TabbedPanel from './TabbedPanel';
-import './TileEditor.css';
+import './TileEditor.scss';
 
 function TileEditor({
 	tile,

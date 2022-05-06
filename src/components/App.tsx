@@ -8,7 +8,7 @@ import DragContext from '../context/DragContext';
 import TileType from '../model/TileType';
 import Side from '../Side';
 import WaveFieldResolver, { WaveField } from '../WaveField';
-import './App.css';
+import './App.scss';
 import MapView from './MapView';
 import ProgressBar from './ProgressBar';
 import TileEditor from './TileEditor';

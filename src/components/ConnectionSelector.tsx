@@ -1,7 +1,7 @@
 import { solid } from '@fortawesome/fontawesome-svg-core/import.macro';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useState } from 'react';
-import './ConnectionSelector.css';
+import './ConnectionSelector.scss';
 
 const connections = ['dirt', 'sand', 'grass', 'water'].map((name) => ({
 	name,

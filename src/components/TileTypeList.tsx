@@ -1,7 +1,7 @@
 import { solid } from '@fortawesome/fontawesome-svg-core/import.macro';
 import { default as TileTypeModel } from '../model/TileType';
 import FontAwesomeButton from './FontAwesomeButton';
-import './TileTypeList.css';
+import './TileTypeList.scss';
 
 function TileTypeList({
 	tiles,

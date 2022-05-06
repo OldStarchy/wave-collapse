@@ -1,0 +1,117 @@
+.TileEditor {
+	display: grid;
+	grid-template-columns: auto 1fr 1fr;
+	grid-template-rows: auto 1fr;
+	grid-template-areas:
+		'image info images'
+		'image info images';
+	gap: 1rem;
+
+	&--Empty {
+		border: 1px solid var(--color-border);
+		padding: 1rem;
+		width: 100%;
+		height: 100%;
+	}
+
+	&__Image {
+		grid-area: image;
+		height: 100%;
+		aspect-ratio: 1 / 1;
+		border: 1px solid var(--color-border);
+		padding: 1rem;
+	}
+	&__ImageContainer {
+		background-color: white;
+		width: 100%;
+		height: 100%;
+	}
+
+	&__ImageContainer > img {
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+		image-rendering: pixelated;
+	}
+
+	&__Properties {
+		grid-area: images;
+	}
+
+	&__Connections {
+		padding: 0.5rem;
+		display: grid;
+		grid-template-columns: auto 1fr;
+		gap: 0.5rem;
+		align-content: flex-start;
+		align-items: center;
+	}
+
+	&__Connections .ConnectionSelector {
+		display: contents;
+	}
+
+	&__Info {
+		grid-area: info;
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+		margin-bottom: 0.5rem;
+	}
+	&__Name {
+		font-size: 2rem;
+	}
+	&__Description {
+		flex-grow: 1;
+		resize: none;
+	}
+}
+
+.TileImageSelector {
+	display: grid;
+	justify-content: stretch;
+	align-items: stretch;
+
+	&__Images {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(3rem, 1fr));
+		align-content: flex-start;
+		overflow-y: scroll;
+		padding: 0.5rem;
+		gap: 0.5rem;
+	}
+
+	&__ImageContainer > img {
+		width: 100%;
+		max-width: 3rem;
+		max-height: 3rem;
+		object-fit: contain;
+		image-rendering: pixelated;
+	}
+
+	&__Image {
+		padding: 0.5rem;
+		aspect-ratio: 1 / 1;
+		border: 1px dashed transparent;
+		cursor: pointer;
+		transition: background-color 0.2s ease-in-out,
+			border-color 0.2s ease-in-out;
+
+		&--selected {
+			border-color: var(--color-border);
+			background-color: var(--color-highlight-background);
+		}
+	}
+
+	&__DropZone {
+		margin: 0.5rem;
+		display: grid;
+		justify-content: center;
+		align-items: center;
+		border: 1px dashed var(--color-border);
+
+		&--isDraggingOver {
+			background-color: var(--color-highlight-background);
+		}
+	}
+}

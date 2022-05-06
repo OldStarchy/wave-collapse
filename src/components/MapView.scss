@@ -1,0 +1,54 @@
+.MapView {
+	--color-grid: var(--color-border);
+
+	&__Canvas {
+		position: absolute;
+		left: 0;
+		top: 0;
+		width: 100%;
+		height: 100%;
+	}
+
+	&__Controls {
+		position: absolute;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		gap: 1rem;
+		padding: 0.5rem;
+		background-color: var(--color-background);
+		box-shadow: 0 0 2rem var(--color-background);
+
+		opacity: 0.6;
+		transition: opacity 0.2s;
+
+		&--Side {
+			right: 1rem;
+			top: 1rem;
+			flex-direction: column;
+		}
+
+		&--Top {
+			top: 0;
+			left: 50%;
+			width: auto;
+			transform: translateX(-50%);
+		}
+		&--Bottom {
+			bottom: 0;
+			left: 50%;
+			width: auto;
+			transform: translateX(-50%);
+		}
+
+		&:hover {
+			opacity: 1;
+		}
+	}
+
+	&__Control {
+		font-size: 1.5rem;
+		width: 2em;
+		height: 2em;
+	}
+}

@@ -1,4 +1,4 @@
-import './ProgressBar.css';
+import './ProgressBar.scss';
 
 function ProgressBar({
 	progress,

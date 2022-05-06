@@ -1,5 +1,5 @@
 import { ButtonHTMLAttributes } from 'react';
-import './Button.css';
+import './Button.scss';
 
 function Button({
 	text,

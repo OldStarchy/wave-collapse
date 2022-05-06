@@ -1,0 +1,44 @@
+.ConnectionSelector {
+	display: flex;
+	align-items: center;
+
+	&__Value {
+		flex-grow: 1;
+		position: relative;
+		display: flex;
+		border: 1px solid var(--color-border);
+		padding: 0.5rem;
+	}
+	&__Button {
+		flex-grow: 1;
+		display: flex;
+		cursor: pointer;
+	}
+
+	//TODO: no nested elements
+	&__Button__Text {
+		flex-grow: 1;
+	}
+
+	&__Menu {
+		position: absolute;
+		top: 100%;
+		/* TODO: don't hardcode border size? */
+		left: -1px;
+		width: calc(100% + 2px);
+		z-index: 1;
+		background-color: var(--color-background);
+		border: 1px solid var(--color-border);
+		padding: 0.5rem 0;
+		overflow-y: scroll;
+	}
+
+	&__MenuItem {
+		padding: 0.5rem;
+		cursor: pointer;
+	}
+
+	&__MenuItem:hover {
+		background-color: var(--color-highlight-background);
+	}
+}

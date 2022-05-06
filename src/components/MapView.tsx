@@ -1,10 +1,10 @@
-import { solid } from '@fortawesome/fontawesome-svg-core/import.macro';
-import { createRef, useCallback, useContext, useEffect, useState } from 'react';
+import {solid} from '@fortawesome/fontawesome-svg-core/import.macro';
+import {createRef, useCallback, useContext, useEffect, useState} from 'react';
 import ConfigContext from '../context/ConfigContext';
-import WaveFieldResolver, { TileSet, WaveField } from '../WaveField';
+import WaveFieldResolver, {TileSet, WaveField} from '../WaveField';
 import FontAwesomeButton from './FontAwesomeButton';
 import BufferedInput from './input/BufferedInput';
-import './MapView.css';
+import './MapView.scss';
 
 const TILE_SIZE = 32;
 

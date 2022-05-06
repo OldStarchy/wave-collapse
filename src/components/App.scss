@@ -1,0 +1,60 @@
+.App {
+	width: 100vw;
+	height: 100vh;
+
+	display: grid;
+	grid-template-areas:
+		'Content'
+		'ProgressBar';
+	grid-template-rows: 1fr auto;
+
+	justify-items: stretch;
+	align-items: stretch;
+
+	background-color: var(--color-background);
+
+	&__Content {
+		grid-area: Content;
+		display: grid;
+		grid-template-areas:
+			'MapView TileTypeList'
+			'TileEditor TileEditor';
+		grid-template-columns: 1fr 300px;
+		grid-template-rows: 1fr 300px;
+		gap: 0.5rem;
+		min-width: 0;
+		min-height: 0;
+
+		justify-items: stretch;
+		align-items: stretch;
+
+		&--nogui {
+			grid-template-areas: 'MapView';
+
+			grid-template-columns: 1fr;
+			grid-template-rows: 1fr;
+		}
+	}
+
+	.MapView {
+		grid-area: MapView;
+		position: relative;
+		border: 1px solid var(--color-border);
+	}
+
+	.TileTypeList {
+		grid-area: TileTypeList;
+		position: relative;
+		border: 1px solid var(--color-border);
+	}
+
+	.TileEditor {
+		grid-area: TileEditor;
+		position: relative;
+	}
+
+	.ProgressBar {
+		grid-area: ProgressBar;
+		height: 1rem;
+	}
+}

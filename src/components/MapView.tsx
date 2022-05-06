@@ -390,8 +390,8 @@ function MapView({
 				}}
 				onMouseMove={(e) => {
 					setMousePosition({
-						x: e.clientX,
-						y: e.clientY,
+						x: e.nativeEvent.offsetX,
+						y: e.nativeEvent.offsetY,
 					});
 				}}
 				onAuxClick={(e) => {

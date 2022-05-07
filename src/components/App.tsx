@@ -5,6 +5,7 @@ import ConfigContext, {
 	defaultConfig,
 } from '../context/ConfigContext';
 import DragContext from '../context/DragContext';
+import useUndo from '../hooks/useUndo';
 import TileType from '../model/TileType';
 import Side from '../Side';
 import WaveFieldResolver, { WaveField } from '../WaveField';
@@ -17,46 +18,6 @@ import Resizable from './Resizable';
 import TileEditor from './TileEditor';
 import TileTypeList from './TileTypeList';
 
-function useUndo<TState>(state: TState, setState: (state: TState) => void) {
-	const history = useRef({ history: [] as TState[], head: 0 });
-
-	useEffect(() => {
-		if (history.current.history[history.current.head] !== state) {
-			history.current.history.splice(
-				history.current.head + 1,
-				Infinity,
-				state
-			);
-			history.current.head = history.current.history.length - 1;
-		}
-	}, [state]);
-
-	const canUndo = useCallback(() => history.current.head > 0, []);
-	const canRedo = useCallback(
-		() => history.current.head < history.current.history.length - 1,
-		[]
-	);
-
-	const undo = useCallback(() => {
-		if (history.current.head === 0) {
-			return;
-		}
-
-		history.current.head--;
-		setState(history.current.history[history.current.head]);
-	}, [setState]);
-
-	const redo = useCallback(() => {
-		if (history.current.head === history.current.history.length - 1) {
-			return;
-		}
-
-		history.current.head++;
-		setState(history.current.history[history.current.head]);
-	}, [setState]);
-
-	return { canUndo, canRedo, undo, redo };
-}
 
 function App() {
 	const [tileTypes, setTileTypes] = useState<

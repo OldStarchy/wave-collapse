@@ -29,6 +29,7 @@ declare global {
 		'editor.redo': true;
 		'editor.clearMap': true;
 		'editor.new': true;
+		'editor.newTileType': true;
 	}
 }
 
@@ -136,11 +137,40 @@ function App() {
 		setIsPlaying(false);
 	}, [tileTypes, waveField]);
 
+	const newTileType = useCallback(() => {
+		if (
+			Object.keys(waveField).length === 0 ||
+			window.confirm('This will clear the map. Continue?')
+		) {
+			setTileTypes((types) => {
+				let nameSuffix = Object.keys(types).length;
+				let newName: string;
+				do {
+					newName = `tile ${nameSuffix}`;
+				} while (
+					Object.values(types).some(
+						// eslint-disable-next-line no-loop-func
+						(type) => type.name === newName
+					) &&
+					nameSuffix++
+				);
+
+				const newType = {
+					...tileTypeDefaults(),
+					name: newName,
+				};
+
+				return {
+					...types,
+					[newType.id]: newType,
+				};
+			});
+		}
+	}, [waveField]);
+
 	const { register } = useCommandsHelper();
 
 	useEffect(() => {
-		register({ id: 'editor.step', title: 'Step', execute: step });
-
 		register({
 			id: 'editor.new',
 			title: 'New',
@@ -176,13 +206,6 @@ function App() {
 		});
 
 		register({
-			id: 'editor.playPause',
-			title: 'Play/Pause',
-			execute: () => setIsPlaying((isPlaying) => !isPlaying),
-			bindings: ['ctrl+p'],
-		});
-
-		register({
 			id: 'editor.undo',
 			title: 'Undo',
 			execute: mapHistory.undo,
@@ -195,7 +218,30 @@ function App() {
 			execute: mapHistory.redo,
 			bindings: ['ctrl+y', 'ctrl+shift+y'],
 		});
-	}, [step, save, load, mapHistory, register]);
+
+		register({
+			id: 'editor.step',
+			title: 'Step',
+			execute: step,
+			bindings: ['ctrl+shift+p'],
+		});
+
+		register({
+			id: 'editor.playPause',
+			title: 'Play/Pause',
+			execute: () => setIsPlaying((isPlaying) => !isPlaying),
+			bindings: ['ctrl+p'],
+		});
+
+		register({
+			id: 'editor.newTileType',
+			title: 'Add new tile type',
+			execute: newTileType,
+			//TODO: think of a good keybind for this
+			// Chrome doesn't allow overriding ctrl+n, ctrl+shift+n, ctrl+t, ctrl+shift+t, and probably some others
+			// bindings: ['ctrl+n'],
+		});
+	}, [clear, save, load, mapHistory, step, newTileType, register]);
 
 	return (
 		<ConfigContext.Provider value={[config, setConfig]}>
@@ -281,42 +327,6 @@ function App() {
 									tiles={tileTypes}
 									selectedTileType={selectedTileType}
 									setSelectedTileType={setSelectedTileType}
-									onAddTileButtonClick={() => {
-										if (
-											Object.keys(waveField).length ===
-												0 ||
-											window.confirm(
-												'This will clear the map. Continue?'
-											)
-										) {
-											setTileTypes((types) => {
-												let nameSuffix =
-													Object.keys(types).length;
-												let newName: string;
-												do {
-													newName = `tile ${nameSuffix}`;
-												} while (
-													Object.values(types).some(
-														// eslint-disable-next-line no-loop-func
-														(type) =>
-															type.name ===
-															newName
-													) &&
-													nameSuffix++
-												);
-
-												const newType = {
-													...tileTypeDefaults(),
-													name: newName,
-												};
-
-												return {
-													...types,
-													[newType.id]: newType,
-												};
-											});
-										}
-									}}
 								/>
 							</Resizable>
 						}

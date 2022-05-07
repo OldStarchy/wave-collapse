@@ -8,13 +8,11 @@ function TileTypeList({
 	tiles,
 	selectedTileType,
 	setSelectedTileType,
-	onAddTileButtonClick,
 	className,
 }: {
 	tiles: Record<TileTypeModel['id'], TileTypeModel>;
 	selectedTileType: string | undefined;
 	setSelectedTileType: (tileType: TileTypeModel['id'] | undefined) => void;
-	onAddTileButtonClick: () => void;
 	className?: string;
 }) {
 	return (
@@ -36,8 +34,7 @@ function TileTypeList({
 			<FontAwesomeButton
 				icon={solid('plus')}
 				className="TileTypeList__AddNew"
-				onClick={onAddTileButtonClick}
-				title="Add new tile type"
+				command="editor.newTileType"
 			/>
 		</div>
 	);

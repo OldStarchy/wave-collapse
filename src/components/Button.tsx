@@ -23,10 +23,13 @@ function Button({
 	return (
 		<button
 			{...props}
-			className={classNames('Button', {
-				'Button--destructive': destructive,
-				className,
-			})}
+			className={classNames(
+				'Button',
+				{
+					'Button--destructive': destructive,
+				},
+				className
+			)}
 			onClick={onClick}
 			disabled={disabled}
 			title={title}

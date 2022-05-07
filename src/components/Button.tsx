@@ -1,25 +1,56 @@
 import classNames from 'classnames';
 import { ButtonHTMLAttributes } from 'react';
 import './Button.scss';
+import { CommandName, useCommandsHelper } from './Keybindings';
 
-function Button({
-	text,
-	onClick,
-	disabled,
-	className,
-	children,
-	title,
-	destructive,
-	...props
-}: {
+type ButtonProps = {
 	text?: string;
-	onClick?: () => void;
 	disabled?: boolean;
 	className?: string;
 	children?: React.ReactNode;
-	title: string | undefined;
-	destructive?: boolean;
-} & ButtonHTMLAttributes<HTMLButtonElement>) {
+} & (
+	| ({
+			onClick?: () => void;
+			title: string | undefined;
+			destructive?: boolean;
+	  } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onClick' | 'title'>)
+	| ({
+			destructive?: boolean;
+			command: CommandName;
+	  } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onClick' | 'title'>)
+);
+
+function Button({
+	text,
+	disabled,
+	className,
+	children,
+	destructive,
+	...props
+}: ButtonProps) {
+	const { execute, findCommand } = useCommandsHelper();
+
+	let onClick = 'onClick' in props ? props.onClick : undefined;
+	let title = 'title' in props ? props.title : undefined;
+
+	if ('command' in props) {
+		const command = props.command;
+
+		onClick = () => {
+			execute(command);
+		};
+
+		const commandInfo = findCommand(command);
+
+		if (commandInfo) {
+			const keybinding = commandInfo?.bindings[0];
+
+			title = [commandInfo.title, keybinding && `(${keybinding})`]
+				.filter((w) => w)
+				.join(' ');
+		}
+	}
+
 	return (
 		<button
 			{...props}

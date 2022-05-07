@@ -5,6 +5,7 @@ import ConfigContext from '../context/ConfigContext';
 import WaveFieldResolver, { TileSet, WaveField } from '../WaveField';
 import FontAwesomeButton from './FontAwesomeButton';
 import BufferedInput from './input/BufferedInput';
+import { useCommands } from './Keybindings';
 import './MapView.scss';
 
 const TILE_SIZE = 32;
@@ -37,13 +38,7 @@ function MapView({
 	className,
 	waveField,
 	onClickPosition,
-	onStepButtonClick,
 	settings: _settings = {},
-	onPlayButtonClick,
-	onClearButtonClick,
-	onSaveButtonClick,
-	onLoadButtonClick,
-	onNewButtonClick,
 	isPlaying,
 	renderUnknownTiles,
 	mapHistory,
@@ -56,13 +51,7 @@ function MapView({
 		y: number,
 		which: MouseEvent['button']
 	) => void;
-	onStepButtonClick: () => void;
 	settings?: Partial<MapViewSettings>;
-	onPlayButtonClick: () => void;
-	onClearButtonClick: () => void;
-	onSaveButtonClick: () => void;
-	onLoadButtonClick: () => void;
-	onNewButtonClick: () => void;
 	tileset: TileSet;
 
 	isPlaying: boolean;
@@ -87,6 +76,8 @@ function MapView({
 	const [visualOffset, setVisualOffset] = useState({ x: 0, y: 0 });
 	const [visualZoom, setVisualZoom] = useState(1);
 
+	const { execute } = useCommands();
+
 	const [mousePosition, setMousePosition] = useState<
 		| undefined
 		| {
@@ -107,6 +98,12 @@ function MapView({
 		},
 		[setZoomNative]
 	);
+
+	const [selectedTileState, setSelectedTileState] = useState(0);
+
+	useEffect(() => {
+		setSelectedTileState(0);
+	}, [selectedTileState]);
 
 	//TODO: instead of pulling variables from css, try to inject them into css from a ThemeProvider component
 	// and use a useTheme consumer hook here
@@ -468,23 +465,20 @@ function MapView({
 						<FontAwesomeButton
 							className="MapView__Control"
 							icon={solid('file')}
-							onClick={onNewButtonClick}
-							title="New"
+							command="editor.new"
 						/>
 						<div></div>
 
 						<FontAwesomeButton
 							className="MapView__Control"
 							icon={solid('save')}
-							onClick={onSaveButtonClick}
-							title="Save map"
+							command="editor.saveTileset"
 							disabled={Object.keys(tileset).length === 0}
 						/>
 						<FontAwesomeButton
 							className="MapView__Control"
 							icon={solid('folder')}
-							onClick={onLoadButtonClick}
-							title="Open map"
+							command="editor.loadTileset"
 						/>
 						<FontAwesomeButton
 							className="MapView__Control"
@@ -498,18 +492,14 @@ function MapView({
 						<FontAwesomeButton
 							className="MapView__Control"
 							icon={solid('undo')}
-							onClick={() => {
-								mapHistory.undo();
-							}}
+							command="editor.undo"
 							title="Undo"
 							disabled={!mapHistory.canUndo()}
 						/>
 						<FontAwesomeButton
 							className="MapView__Control"
 							icon={solid('redo')}
-							onClick={() => {
-								mapHistory.redo();
-							}}
+							command="editor.redo"
 							title="Redo"
 							disabled={!mapHistory.canRedo()}
 						/>
@@ -519,7 +509,7 @@ function MapView({
 						<FontAwesomeButton
 							className="MapView__Control"
 							icon={solid('trash')}
-							onClick={onClearButtonClick}
+							command="editor.clearMap"
 							title="Clear map"
 							disabled={Object.keys(waveField).length === 0}
 						/>
@@ -529,14 +519,14 @@ function MapView({
 						<FontAwesomeButton
 							className="MapView__Control"
 							icon={solid('forward-step')}
-							onClick={onStepButtonClick}
+							command="editor.step"
 							disabled={Object.keys(tileset).length === 0}
 							title="Step"
 						/>
 						<FontAwesomeButton
 							className="MapView__Control"
 							icon={isPlaying ? solid('pause') : solid('play')}
-							onClick={onPlayButtonClick}
+							command="editor.playPause"
 							disabled={Object.keys(tileset).length === 0}
 							title={isPlaying ? 'Pause' : 'Play'}
 						/>

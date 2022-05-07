@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import ConfigContext, {
 	AppConfig,
@@ -12,12 +12,25 @@ import WaveFieldResolver, { WaveField } from '../WaveField';
 import './App.scss';
 import EditorWindow from './EditorWindow';
 import HelpContent from './HelpContent';
+import { useCommandsHelper } from './Keybindings';
 import MapView from './MapView';
 import ProgressBar from './ProgressBar';
 import Resizable from './Resizable';
 import TileEditor from './TileEditor';
 import TileTypeList from './TileTypeList';
 
+declare global {
+	interface ProvideCommands {
+		'editor.saveTileset': true;
+		'editor.loadTileset': true;
+		'editor.playPause': true;
+		'editor.step': true;
+		'editor.undo': true;
+		'editor.redo': true;
+		'editor.clearMap': true;
+		'editor.new': true;
+	}
+}
 
 function App() {
 	const [tileTypes, setTileTypes] = useState<
@@ -71,7 +84,14 @@ function App() {
 		};
 	}, [isPlaying, config, waveField, tileTypes]);
 
-	const save = () => {
+	const clear = useCallback(() => {
+		if (window.confirm('Are you sure?')) {
+			setWaveField({});
+			setIsPlaying(false);
+		}
+	}, []);
+
+	const save = useCallback(() => {
 		const data = JSON.stringify(
 			Object.values(tileTypes).map(prepareTileTypeForSave)
 		);
@@ -82,9 +102,9 @@ function App() {
 		link.download = 'map.json';
 		link.click();
 		URL.revokeObjectURL(url);
-	};
+	}, [tileTypes]);
 
-	const load = () => {
+	const load = useCallback(() => {
 		const input = document.createElement('input');
 		input.type = 'file';
 		input.accept = 'application/json';
@@ -108,7 +128,74 @@ function App() {
 			reader.readAsText(file);
 		};
 		input.click();
-	};
+	}, []);
+
+	const step = useCallback(() => {
+		const newField = WaveFieldResolver.collapseOne(waveField, tileTypes);
+		setWaveField(newField);
+		setIsPlaying(false);
+	}, [tileTypes, waveField]);
+
+	const { register } = useCommandsHelper();
+
+	useEffect(() => {
+		register({ id: 'editor.step', title: 'Step', execute: step });
+
+		register({
+			id: 'editor.new',
+			title: 'New',
+			execute: () => {
+				//TODO: Don't use ugly window.confirm
+				if (window.confirm('Are you sure?')) {
+					setTileTypes({});
+					setIsPlaying(false);
+				}
+			},
+			bindings: ['ctrl+n'],
+		});
+
+		register({
+			id: 'editor.clearMap',
+			execute: clear,
+			title: 'Clear map',
+			bindings: ['ctrl+shift+delete'],
+		});
+
+		register({
+			id: 'editor.saveTileset',
+			execute: save,
+			title: 'Save Tileset',
+			bindings: ['ctrl+s'],
+		});
+
+		register({
+			id: 'editor.loadTileset',
+			title: 'Load Tileset',
+			execute: load,
+			bindings: ['ctrl+o'],
+		});
+
+		register({
+			id: 'editor.playPause',
+			title: 'Play/Pause',
+			execute: () => setIsPlaying((isPlaying) => !isPlaying),
+			bindings: ['ctrl+p'],
+		});
+
+		register({
+			id: 'editor.undo',
+			title: 'Undo',
+			execute: mapHistory.undo,
+			bindings: ['ctrl+z'],
+		});
+
+		register({
+			id: 'editor.redo',
+			title: 'Redo',
+			execute: mapHistory.redo,
+			bindings: ['ctrl+y', 'ctrl+shift+y'],
+		});
+	}, [step, save, load, mapHistory, register]);
 
 	return (
 		<ConfigContext.Provider value={[config, setConfig]}>
@@ -168,35 +255,8 @@ function App() {
 									}
 								}}
 								mapHistory={mapHistory}
-								onStepButtonClick={() => {
-									const newField =
-										WaveFieldResolver.collapseOne(
-											waveField,
-											tileTypes
-										);
-									setWaveField(newField);
-									setIsPlaying(false);
-								}}
-								onPlayButtonClick={() => {
-									setIsPlaying((isPlaying) => !isPlaying);
-								}}
-								onClearButtonClick={() => {
-									if (window.confirm('Are you sure?')) {
-										setWaveField({});
-										setIsPlaying(false);
-									}
-								}}
 								//TODO: This should be done via context
 								isPlaying={isPlaying}
-								onSaveButtonClick={save}
-								onLoadButtonClick={load}
-								onNewButtonClick={() => {
-									//TODO: Don't use ugly window.confirm
-									if (window.confirm('Are you sure?')) {
-										setTileTypes({});
-										setIsPlaying(false);
-									}
-								}}
 								renderUnknownTiles={false}
 							/>
 						}

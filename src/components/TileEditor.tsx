@@ -211,6 +211,36 @@ function TileEditor({
 															alt={tile.name}
 														/>
 													</div>
+													<button
+														className="TileImageSelector__ImageDelete"
+														title="Delete this image"
+														onClick={() => {
+															if (
+																window.confirm(
+																	'Are you sure?'
+																)
+															) {
+																setTileProps(
+																	tile.id,
+																	{
+																		images: tile.images.filter(
+																			(
+																				img
+																			) =>
+																				img.id !==
+																				image.id
+																		),
+																	}
+																);
+															}
+														}}
+													>
+														<FontAwesomeIcon
+															icon={solid(
+																'trash'
+															)}
+														/>
+													</button>
 												</div>
 											))}
 

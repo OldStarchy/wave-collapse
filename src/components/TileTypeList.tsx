@@ -19,7 +19,7 @@ function TileTypeList({
 }) {
 	return (
 		<div
-			className={classNames(className, 'TileTypeList')}
+			className={classNames('TileTypeList', className)}
 			onClick={() => {
 				setSelectedTileType(undefined);
 			}}
@@ -53,12 +53,12 @@ function TileType({
 	onClick: () => void;
 }) {
 	const image = images[0];
-	const classes = ['TileTypeList__Tile'];
-	if (selected) classes.push('TileTypeList__Tile--selected');
 
 	return (
 		<div
-			className={classes.join(' ')}
+			className={classNames('TileTypeList__Tile', {
+				'TileTypeList__Tile--selected': selected,
+			})}
 			onClick={(e) => {
 				e.stopPropagation();
 				onClick();

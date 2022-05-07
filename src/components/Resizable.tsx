@@ -90,15 +90,6 @@ function Resizable({
 		setIsResizing(false);
 	};
 
-	const classes = classNames(
-		'Resizable',
-		{
-			[`Resizable--${direction}`]: direction,
-			[`Resizable--${isResizing ? 'resizing' : ''}`]: isResizing,
-		},
-		className
-	);
-
 	useEffect(() => {
 		document.addEventListener('mouseup', handleMouseUp);
 		document.addEventListener('mousemove', handleMouseMove);
@@ -110,7 +101,14 @@ function Resizable({
 
 	return (
 		<div
-			className={classes}
+			className={classNames(
+				'Resizable',
+				{
+					[`Resizable--${direction}`]: direction,
+					'Resizable--resizing': isResizing,
+				},
+				className
+			)}
 			style={{
 				...(!minimized && {
 					[direction === 'left' || direction === 'right'

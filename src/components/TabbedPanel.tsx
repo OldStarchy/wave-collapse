@@ -1,3 +1,4 @@
+import classNames from 'classnames';
 import React, { cloneElement, useState } from 'react';
 import Button from './Button';
 import './TabbedPanel.scss';
@@ -15,16 +16,14 @@ function TabbedPanel<
 }) {
 	const [activeTab, setActiveTab] = useState<keyof TTabs>(defaultTab);
 
-	className = className ? `${className} TabbedPanel` : 'TabbedPanel';
-
 	return (
-		<div className={className}>
+		<div className={classNames('TabbedPanel', className)}>
 			<div className="TabbedPanel__Tabs">
 				{Object.keys(children).map((tab) => (
 					<Button
-						className={`TabbedPanel__Tab ${
-							tab === activeTab ? 'TabbedPanel__Tab--active' : ''
-						}`}
+						className={classNames('TabbedPanel__Tab', {
+							'TabbedPanel__Tab--active': tab === activeTab,
+						})}
 						key={tab}
 						onClick={() => setActiveTab(tab as keyof TTabs)}
 						title={undefined}

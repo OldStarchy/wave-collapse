@@ -22,7 +22,7 @@ function EditorWindow({
 	return (
 		<section
 			style={style}
-			className={classNames(className, 'EditorWindow')}
+			className={classNames('EditorWindow', className)}
 		>
 			{mainContent &&
 				cloneElement(mainContent, {

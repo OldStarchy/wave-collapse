@@ -166,7 +166,7 @@ function App() {
 					}}
 				>
 					<EditorWindow
-						className={'App__Content'}
+						className="App__Content"
 						mainContent={
 							<MapView
 								waveField={waveField}

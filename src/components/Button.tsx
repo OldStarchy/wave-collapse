@@ -1,3 +1,4 @@
+import classNames from 'classnames';
 import { ButtonHTMLAttributes } from 'react';
 import './Button.scss';
 
@@ -20,7 +21,7 @@ function Button({
 	return (
 		<button
 			{...props}
-			className={`Button ${className || ''}`}
+			className={classNames('Button', className)}
 			onClick={onClick}
 			disabled={disabled}
 			title={title}

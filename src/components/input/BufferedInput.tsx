@@ -1,5 +1,6 @@
 import { solid } from '@fortawesome/fontawesome-svg-core/import.macro';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import classNames from 'classnames';
 import { InputHTMLAttributes, useCallback, useEffect, useState } from 'react';
 import './BufferedInput.css';
 
@@ -34,11 +35,7 @@ function BufferedInput({
 	}, [value]);
 
 	return (
-		<div
-			className={
-				className ? `${className} BufferedInput` : 'BufferedInput'
-			}
-		>
+		<div className={classNames('BufferedInput', className)}>
 			{error && (
 				<div className="BufferedInput__Error" title={error}>
 					<FontAwesomeIcon icon={solid('exclamation-triangle')} />

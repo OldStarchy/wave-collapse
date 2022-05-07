@@ -350,7 +350,7 @@ function MapView({
 
 	return (
 		<div
-			className={classNames(className, 'MapView')}
+			className={classNames('MapView', className)}
 			tabIndex={-1}
 			onKeyDown={(e) => {
 				switch (e.key) {

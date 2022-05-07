@@ -1,3 +1,4 @@
+import classNames from 'classnames';
 import './ProgressBar.scss';
 
 function ProgressBar({
@@ -7,12 +8,16 @@ function ProgressBar({
 	progress: undefined | number;
 	className?: string;
 }) {
-	const classes = ['ProgressBar'];
-	if (className) classes.push(className);
-	if (progress === undefined) classes.push('ProgressBar--indeterminate');
-
 	return (
-		<div className={classes.join(' ')}>
+		<div
+			className={classNames(
+				'ProgressBar',
+				{
+					'ProgressBar--indeterminate': progress === undefined,
+				},
+				className
+			)}
+		>
 			<div
 				className="ProgressBar__Bar"
 				style={{

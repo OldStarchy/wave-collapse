@@ -9,7 +9,7 @@ function Typography({
 	className?: string;
 }>) {
 	return (
-		<div className={classNames(className, 'Typography')}>{children}</div>
+		<div className={classNames('Typography', className)}>{children}</div>
 	);
 }
 
@@ -28,15 +28,14 @@ export function Accordion({
 	};
 
 	return (
-		<section className={classNames(className, 'Accordion')}>
+		<section className={classNames('Accordion', className)}>
 			{cloneElement(heading, {
 				onClick: toggle,
 			})}
 			<div
-				className={classNames(
-					'Accordion__content',
-					collapsed ? 'Accordion__content--collapsed' : ''
-				)}
+				className={classNames('Accordion__content', {
+					'Accordion__content--collapsed': collapsed,
+				})}
 			>
 				{children}
 			</div>

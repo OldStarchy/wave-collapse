@@ -117,7 +117,7 @@ function TileEditor({
 	}, [handlePaste]);
 
 	return tile ? (
-		<div className={classNames(className, 'TileEditor')}>
+		<div className={classNames('TileEditor', className)}>
 			<div className="TileEditor__Image">
 				<div className="TileEditor__ImageContainer">
 					{tile.images[selectedImage] && (
@@ -181,10 +181,14 @@ function TileEditor({
 										>
 											{tile.images.map((image, i) => (
 												<div
-													className={`TileImageSelector__Image ${
-														i === selectedImage &&
-														'TileImageSelector__Image--selected'
-													}`}
+													className={classNames(
+														'TileImageSelector__Image',
+														{
+															'TileImageSelector__Image--selected':
+																i ===
+																selectedImage,
+														}
+													)}
 													key={i}
 													onClick={() =>
 														setSelectedImage(i)
@@ -211,11 +215,13 @@ function TileEditor({
 
 										{isDragging && (
 											<div
-												className={`TileImageSelector__DropZone ${
-													isDraggingOver
-														? 'TileImageSelector__DropZone--isDraggingOver'
-														: ''
-												}`}
+												className={classNames(
+													'TileImageSelector__DropZone',
+													{
+														'TileImageSelector__DropZone--isDraggingOver':
+															isDraggingOver,
+													}
+												)}
 												onDrop={handleDrop}
 												onDragOver={handleDragOver}
 												onDragEnter={() =>

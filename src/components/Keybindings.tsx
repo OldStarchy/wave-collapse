@@ -11,6 +11,7 @@ import {
 //TODO: Add chorded keybindings (eg. `ctrl+k, ctrl+d`)
 //TODO: add context keys to commands, eg. `editorHasFocus` or `!mapIsEmpty`
 // This can be used to automatically disable buttons when certain conditions are not met
+//TODO: add command parameters (like clickMap(x, y) or loadFile(file))
 
 declare global {
 	interface ProvideCommands {}

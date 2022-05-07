@@ -28,16 +28,23 @@ function HelpContent() {
 				<section>
 					<h2>What's New</h2>
 					<p>Some stuff is new!</p>
-					<ul>
-						<li>
-							Resizable panels! (wow)
+					<dl>
+						<dt>Resizable panels! (wow)</dt>
+						<dd>
 							<p>
 								Click and drag a grey bar to resize a panel,
 								double click it to show/hide the panel
 							</p>
-						</li>
-						<li>A "What's new" section</li>
-					</ul>
+						</dd>
+						<dt>A "What's new" section</dt>
+						<dd>
+							<p>You're lookin' at it!</p>
+						</dd>
+						<dt>Keybindings!</dt>
+						<dd>
+							<p>Hover over a button to see its keybinding</p>
+						</dd>
+					</dl>
 				</section>
 				<section>
 					<h2>Help</h2>
@@ -56,22 +63,22 @@ function HelpContent() {
 								<p>
 									Select the tile type on the right. There are
 									3 ways to add images:
-									<ul>
-										<li>
-											click the + button in the "Images"
-											section
-										</li>
-										<li>
-											drag and drop image files into the
-											"Images" section
-										</li>
-										<li>
-											click a blank space in the "Images"
-											section and paste an image from the
-											clipboard
-										</li>
-									</ul>
 								</p>
+								<ul>
+									<li>
+										click the + button in the "Images"
+										section
+									</li>
+									<li>
+										drag and drop image files into the
+										"Images" section
+									</li>
+									<li>
+										click a blank space in the "Images"
+										section and paste an image from the
+										clipboard
+									</li>
+								</ul>
 							</dd>
 							<dt>Define Connections</dt>
 							<dd>
@@ -156,6 +163,35 @@ function HelpContent() {
 										download the example
 									</a>
 									.
+								</p>
+							</dd>
+						</dl>
+					</section>
+					<section>
+						<h3>Map Editor</h3>
+						<dl>
+							<dt>Place Tiles</dt>
+							<dd>
+								<p>
+									Select a tile type on the right and left
+									click on the map.{' '}
+									{/* TODO: allow rotating tiles and remove this message */}
+									(You can't rotate tiles yet sorry!)
+								</p>
+							</dd>
+							<dt>Remove Tiles</dt>
+							<dd>
+								<p>
+									Right click a tile to clear it. This is
+									kinda buggy but oh well :)
+								</p>
+							</dd>
+							<dt>Collapse Tiles</dt>
+							<dd>
+								<p>
+									Middle click a tile to collapse it. It will
+									pick one of the (hopefully valid) possible
+									configurations automatically.
 								</p>
 							</dd>
 						</dl>

@@ -225,10 +225,11 @@ function TileEditor({
 																	{
 																		images: tile.images.filter(
 																			(
-																				img
+																				_,
+																				index
 																			) =>
-																				img.id !==
-																				image.id
+																				index !==
+																				i
 																		),
 																	}
 																);

@@ -11,4 +11,9 @@
 		color: var(--color-disabled);
 		border-color: var(--color-disabled);
 	}
+
+	&--destructive {
+		color: var(--color-destructive);
+		border-color: var(--color-destructive);
+	}
 }

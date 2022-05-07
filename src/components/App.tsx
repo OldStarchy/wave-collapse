@@ -319,6 +319,21 @@ function App() {
 											return newTypes;
 										});
 									}}
+									onDeleteTileClicked={(id) => {
+										if (
+											window.confirm(
+												'Are you sure you want to delete this tile? It will clear the current map.'
+											)
+										) {
+											setTileTypes((types) => {
+												const newTypes = {
+													...types,
+												};
+												delete newTypes[id];
+												return newTypes;
+											});
+										}
+									}}
 									hasOtherTiles={
 										Object.keys(tileTypes).length > 0
 									}

@@ -1,9 +1,11 @@
 import { solid } from '@fortawesome/fontawesome-svg-core/import.macro';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import classNames from 'classnames';
 import React, { createRef, useCallback, useEffect, useState } from 'react';
 import DragContext from '../context/DragContext';
 import TileType from '../model/TileType';
 import Side from '../Side';
+import Button from './Button';
 import ConnectionSelector from './ConnectionSelector';
 import FontAwesomeButton from './FontAwesomeButton';
 import Hidden from './Hidden';
@@ -17,6 +19,7 @@ function TileEditor({
 	hasOtherTiles,
 	setTileProps,
 	className,
+	onDeleteTileClicked,
 }: {
 	tile: Readonly<TileType> | null;
 	hasOtherTiles: boolean;
@@ -24,6 +27,7 @@ function TileEditor({
 		id: TileType['id'],
 		props: Partial<Omit<TileType, 'id'>>
 	) => void;
+	onDeleteTileClicked: (id: TileType['id']) => void;
 	className?: string;
 }) {
 	const [selectedImage, setSelectedImage] = useState<number>(0);
@@ -155,6 +159,13 @@ function TileEditor({
 					placeholder="Click to add a description"
 					value={tile.description}
 				/>
+				<Button
+					destructive
+					title="Delete this tile type"
+					onClick={() => onDeleteTileClicked(tile.id)}
+				>
+					<FontAwesomeIcon icon={solid('trash')} />
+				</Button>
 			</div>
 			<TabbedPanel defaultTab="Images" className="TileEditor__Properties">
 				{{

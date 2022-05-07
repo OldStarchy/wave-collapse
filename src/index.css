@@ -12,6 +12,7 @@
 	--color-highlight-background-solid: #606060;
 
 	--color-disabled: #888;
+	--color-destructive: #ff4444;
 
 	box-sizing: border-box;
 
@@ -25,6 +26,7 @@
 		--color-text: #121212;
 		--color-highlight-background: #a0a0a080;
 		--color-highlight-background-solid: #a0a0a0;
+		--color-destructive: #880000;
 	}
 }
 

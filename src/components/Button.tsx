@@ -9,6 +9,7 @@ function Button({
 	className,
 	children,
 	title,
+	destructive,
 	...props
 }: {
 	text?: string;
@@ -17,11 +18,15 @@ function Button({
 	className?: string;
 	children?: React.ReactNode;
 	title: string | undefined;
+	destructive?: boolean;
 } & ButtonHTMLAttributes<HTMLButtonElement>) {
 	return (
 		<button
 			{...props}
-			className={classNames('Button', className)}
+			className={classNames('Button', {
+				'Button--destructive': destructive,
+				className,
+			})}
 			onClick={onClick}
 			disabled={disabled}
 			title={title}

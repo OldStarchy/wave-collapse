@@ -8,6 +8,8 @@ export type TileKey = `${number}/${number}`;
 export type WaveField = Readonly<Record<TileKey, Readonly<Tile>>>;
 export type TileSet = Readonly<Record<TileType['id'], TileType>>;
 
+//TODO: arbitrary 'grid' shape
+
 namespace WaveFieldResolver {
 	function getKey(position: Coordinate): TileKey;
 	function getKey(tile: Tile): TileKey;

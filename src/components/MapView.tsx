@@ -80,9 +80,7 @@ function MapView({
 
 	const [config, setConfig] = useContext(ConfigContext);
 
-	const [, _rerender] = useState({});
-	const rerender = useCallback(() => _rerender({}), [_rerender]);
-
+	//TODO: better map controls (eg. zoom centered on mouse position)
 	const [offset, setOffset] = useState({ x: 0, y: 0 });
 	const [zoom, setZoomNative] = useState(1);
 
@@ -110,6 +108,8 @@ function MapView({
 		[setZoomNative]
 	);
 
+	//TODO: instead of pulling variables from css, try to inject them into css from a ThemeProvider component
+	// and use a useTheme consumer hook here
 	function cssVar(name: string) {
 		return getComputedStyle(mapView.current!).getPropertyValue(name);
 	}
@@ -311,7 +311,8 @@ function MapView({
 
 		//highlight tile under mouse
 		if (mousePosition) {
-			//TODO: Calculate mouse position on move without redrawing the whole map
+			//TODO: Track mouse position outside of the draw loop
+			// (but also keep track of the(inverse) transform so we know where it is on the map too)
 			const mouse = inverseMatrix.transformPoint({
 				x: mousePosition.x,
 				y: mousePosition.y,
@@ -335,12 +336,6 @@ function MapView({
 			);
 			ctx.stroke();
 			ctx.fill();
-
-			// ctx.drawImage(
-			// 	images['sand0'],
-			// 	tileX * TILE_SIZE,
-			// 	tileY * TILE_SIZE
-			// );
 		} else {
 			setMousePos(undefined);
 		}

@@ -8,6 +8,7 @@ function ProgressBar({
 	progress: undefined | number;
 	className?: string;
 }) {
+	//TODO: test or remove "indeterminate" mode
 	return (
 		<div
 			className={classNames(

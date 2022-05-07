@@ -23,6 +23,7 @@ function TileEditor({
 }: {
 	tile: Readonly<TileType> | null;
 	hasOtherTiles: boolean;
+	//use some kind of global store (eg. redux?)
 	setTileProps: (
 		id: TileType['id'],
 		props: Partial<Omit<TileType, 'id'>>
@@ -211,6 +212,7 @@ function TileEditor({
 															alt={tile.name}
 														/>
 													</div>
+													{/* TODO: make this into a component (name TBC) */}
 													<button
 														className="TileImageSelector__ImageDelete"
 														title="Delete this image"

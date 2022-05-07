@@ -8,6 +8,9 @@ const connections = ['dirt', 'sand', 'grass', 'water'].map((name) => ({
 	key: name,
 }));
 
+//TODO: this is a poorly implemented dropdown field
+// it should be a coolly implemented autocomplete field
+// also there should be a master list of connection keys to back the autocomplete list
 function ConnectionSelector({
 	label,
 	value,

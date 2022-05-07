@@ -11,16 +11,6 @@ const root = ReactDOM.createRoot(
 root.render(
 	<React.StrictMode>
 		<App />
-		{/* <EditorWindow
-			style={{
-				width: '100vw',
-				height: '100vh',
-			}}
-			mainContent={<span>mainContent</span>}
-			leftContent={<span>leftContent</span>}
-			rightContent={<span>rightContent</span>}
-			footerContent={<span>footerContent</span>}
-		/> */}
 	</React.StrictMode>
 );
 

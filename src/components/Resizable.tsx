@@ -2,6 +2,9 @@ import classNames from 'classnames';
 import { useCallback, useEffect, useState } from 'react';
 import './Resizable.scss';
 
+//TODO: min size and max size are arbitrary
+// min size should _probably_ be based on the size of the content
+// and max size should be based on the available size of the parent (maybe useContext?)
 function Resizable({
 	className,
 	children,
@@ -83,7 +86,10 @@ function Resizable({
 				}
 			}
 		},
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 		[isResizing, delta, direction]
+		//this works only because `size` is not a dependency, delta gets updated when you first click so the value of size is captured then
+		// if the value of size were to update in this fuction, it would drift
 	);
 
 	const handleResizeEnd = () => {

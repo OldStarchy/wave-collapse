@@ -59,32 +59,34 @@ function useUndo<TState>(state: TState, setState: (state: TState) => void) {
 }
 
 function App() {
-	const [selectedTileType, setSelectedTileType] = useState<
-		TileType['id'] | undefined
-	>(undefined);
-
-	const [config, setConfig] = useState<AppConfig>(defaultConfig);
 	const [tileTypes, setTileTypes] = useState<
 		Record<TileType['id'], TileType>
 	>({});
 	const [waveField, setWaveField] = useState<WaveField>({});
+	const [config, setConfig] = useState<AppConfig>(defaultConfig);
 
-	const mapHistory = useUndo(waveField, setWaveField);
-
+	const [selectedTileType, setSelectedTileType] = useState<
+		TileType['id'] | undefined
+	>(undefined);
+	const selectedTile = selectedTileType ? tileTypes[selectedTileType] : null;
 	const [dragCounter, setDragCounter] = useState(0);
+
+	//TODO: do something with the progress bar at some point...
+	//Maybe use it with a context provider so that any subcomponent can access it?
 	const [imageLoadProgress, setImageLoadProgress] = useState(1);
+	const loading = imageLoadProgress < 1;
 
 	const [isPlaying, setIsPlaying] = useState(false);
 
-	const loading = imageLoadProgress < 1;
+	const mapHistory = useUndo(waveField, setWaveField);
 
-	const selectedTile = selectedTileType ? tileTypes[selectedTileType] : null;
-
+	// Reset the map if the tile definitions change
 	useEffect(() => {
 		setWaveField({});
 		setIsPlaying(false);
 	}, [tileTypes]);
 
+	// Automatically generate the map
 	useEffect(() => {
 		let timeout: number | undefined;
 

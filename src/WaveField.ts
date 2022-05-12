@@ -211,6 +211,10 @@ namespace WaveFieldResolver {
 					tileset
 				);
 
+				if (connectedTile.superState.length < 2) {
+					continue;
+				}
+
 				const backDirection = Side.getOppositeSide(globalDirection);
 
 				// Remove any states that don't connect to one of the allowed connections

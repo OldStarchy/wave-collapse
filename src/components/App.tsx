@@ -1,20 +1,19 @@
-import { useCallback, useEffect, useState } from 'react';
-import { v4 as uuidv4 } from 'uuid';
+import {useCallback, useEffect, useState} from 'react';
+import {v4 as uuidv4} from 'uuid';
 import ConfigContext, {
 	AppConfig,
-	defaultConfig,
+	defaultConfig
 } from '../context/ConfigContext';
 import DragContext from '../context/DragContext';
 import useUndo from '../hooks/useUndo';
 import TileType from '../model/TileType';
 import Side from '../Side';
-import WaveFieldResolver, { WaveField } from '../WaveField';
+import WaveFieldResolver, {WaveField} from '../WaveField';
 import './App.scss';
 import EditorWindow from './EditorWindow';
 import HelpContent from './HelpContent';
-import { useCommandsHelper } from './Keybindings';
+import {useCommandsHelper} from './Keybindings';
 import MapView from './MapView';
-import ProgressBar from './ProgressBar';
 import Resizable from './Resizable';
 import TileEditor from './TileEditor';
 import TileTypeList from './TileTypeList';
@@ -48,8 +47,8 @@ function App() {
 
 	//TODO: do something with the progress bar at some point...
 	//Maybe use it with a context provider so that any subcomponent can access it?
-	const [imageLoadProgress, setImageLoadProgress] = useState(1);
-	const loading = imageLoadProgress < 1;
+	// const [imageLoadProgress, setImageLoadProgress] = useState(1);
+	// const loading = imageLoadProgress < 1;
 
 	const [isPlaying, setIsPlaying] = useState(false);
 
@@ -374,7 +373,7 @@ function App() {
 							</Resizable>
 						}
 					/>
-					{loading && <ProgressBar progress={imageLoadProgress} />}
+					{/* {loading && <ProgressBar progress={imageLoadProgress} />} */}
 				</div>
 			</DragContext.Provider>
 		</ConfigContext.Provider>

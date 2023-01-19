@@ -1,11 +1,10 @@
-import { solid } from '@fortawesome/fontawesome-svg-core/import.macro';
+import {solid} from '@fortawesome/fontawesome-svg-core/import.macro';
 import classNames from 'classnames';
-import { createRef, useCallback, useContext, useEffect, useState } from 'react';
+import {createRef, useCallback, useContext, useEffect, useState} from 'react';
 import ConfigContext from '../context/ConfigContext';
-import WaveFieldResolver, { TileSet, WaveField } from '../WaveField';
+import WaveFieldResolver, {TileSet, WaveField} from '../WaveField';
 import FontAwesomeButton from './FontAwesomeButton';
 import BufferedInput from './input/BufferedInput';
-import { useCommands } from './Keybindings';
 import './MapView.scss';
 
 const TILE_SIZE = 32;
@@ -76,7 +75,7 @@ function MapView({
 	const [visualOffset, setVisualOffset] = useState({ x: 0, y: 0 });
 	const [visualZoom, setVisualZoom] = useState(1);
 
-	const { execute } = useCommands();
+	// const { execute } = useCommands();
 
 	const [mousePosition, setMousePosition] = useState<
 		| undefined
@@ -245,7 +244,7 @@ function MapView({
 		}
 
 		//draw tiles
-		let renderedTiles = 0;
+		// let renderedTiles = 0;
 		const defaultSuperState =
 			WaveFieldResolver.getDefaultTileSuperState(tileset);
 		for (let x = topLeft.x; x < bottomRight.x; x += TILE_SIZE) {
@@ -264,7 +263,7 @@ function MapView({
 				// 	if (y * TILE_SIZE < topLeft.y || y * TILE_SIZE > bottomRight.y)
 				// 		return;
 
-				renderedTiles++;
+				// renderedTiles++;
 				superState.forEach(({ tileType, rotation }, i) => {
 					//psudorandom based on x and y
 					if (tileType.images.length === 0) {

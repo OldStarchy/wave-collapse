@@ -11,18 +11,23 @@ import {
 //TODO: Add chorded keybindings (eg. `ctrl+k, ctrl+d`)
 //TODO: add context keys to commands, eg. `editorHasFocus` or `!mapIsEmpty`
 // This can be used to automatically disable buttons when certain conditions are not met
-//TODO: add command parameters (like clickMap(x, y) or loadFile(file))
 
 declare global {
 	interface ProvideCommands {}
 }
 
-interface Command {
+interface Command<TOptions = {}> {
 	id: CommandName;
 	title: string;
-	execute: () => void;
+	execute: (options?: TOptions) => void;
 }
-type Commands = { [name in CommandName]?: Command };
+type CommandOptions<T> = T extends Command<infer TOptions> ? TOptions : never;
+
+type Commands = {
+	[name in CommandName]?: Command<
+		ProvideCommands[name] extends true ? {} : {} & ProvideCommands[name]
+	>;
+};
 
 export type CommandName = keyof ProvideCommands extends never
 	? string
@@ -31,7 +36,10 @@ export type CommandName = keyof ProvideCommands extends never
 const CommandsContext = createContext<{
 	commands: Commands;
 	register: (command: Command) => void;
-	execute: (command: CommandName) => void;
+	execute: <TName extends CommandName>(
+		command: TName,
+		options?: CommandOptions<Commands[TName]>,
+	) => void;
 }>({
 	commands: {},
 	register: () => {},
@@ -52,18 +60,21 @@ export default function CommandProvider({
 			(prevCommands): Commands => ({
 				...prevCommands,
 				[command.id]: command,
-			})
+			}),
 		);
 	}, []);
 
 	const execute = useCallback(
-		(command: CommandName) => {
+		<TName extends CommandName>(
+			command: TName,
+			options?: CommandOptions<Commands[TName]>,
+		) => {
 			const cmd = commands[command];
 			if (cmd) {
-				cmd.execute();
+				cmd.execute(options);
 			}
 		},
-		[commands]
+		[commands],
 	);
 
 	return (
@@ -93,12 +104,12 @@ export function useCommandsHelper() {
 				}
 			});
 		},
-		[commandContext, bind]
+		[commandContext, bind],
 	);
 
 	const findCommand = useCallback(
 		(
-			command: CommandName
+			command: CommandName,
 		):
 			| {
 					id: CommandName;
@@ -118,12 +129,12 @@ export function useCommandsHelper() {
 
 			return undefined;
 		},
-		[bindings, commandContext]
+		[bindings, commandContext],
 	);
 
 	return useMemo(
 		() => ({ ...commandContext, register, findCommand }),
-		[commandContext, register, findCommand]
+		[commandContext, register, findCommand],
 	);
 }
 
@@ -165,7 +176,7 @@ function normalizeKeyChord(keyChord: KeyChord): KeyChord {
 
 function isKeyChord(keyChord: string): keyChord is KeyChord {
 	return /^(?:(?:(?:cmd|opt|ctrl|alt|shift|meta)\+)*[a-z]+)(?:\s*,\s*(?:(?:cmd|opt|ctrl|alt|shift|meta)\+)*[a-z]+)*$/.test(
-		keyChord
+		keyChord,
 	);
 }
 
@@ -243,7 +254,7 @@ export function KeybindingProvider({
 				execute(command);
 			}
 		},
-		[bindings, execute]
+		[bindings, execute],
 	);
 
 	useEffect(() => {

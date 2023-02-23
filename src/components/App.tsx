@@ -1,18 +1,18 @@
-import {useCallback, useEffect, useState} from 'react';
-import {v4 as uuidv4} from 'uuid';
+import { useCallback, useEffect, useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import ConfigContext, {
 	AppConfig,
-	defaultConfig
+	defaultConfig,
 } from '../context/ConfigContext';
 import DragContext from '../context/DragContext';
 import useUndo from '../hooks/useUndo';
 import TileType from '../model/TileType';
 import Side from '../Side';
-import WaveFieldResolver, {WaveField} from '../WaveField';
+import WaveFieldResolver, { WaveField } from '../WaveField';
 import './App.scss';
 import EditorWindow from './EditorWindow';
 import HelpContent from './HelpContent';
-import {useCommandsHelper} from './Keybindings';
+import { useCommandsHelper } from './Keybindings';
 import MapView from './MapView';
 import Resizable from './Resizable';
 import TileEditor from './TileEditor';
@@ -21,7 +21,7 @@ import TileTypeList from './TileTypeList';
 declare global {
 	interface ProvideCommands {
 		'editor.saveTileset': true;
-		'editor.loadTileset': true;
+		'editor.loadTileset': { jsonLiteral: string } | { url: string };
 		'editor.playPause': true;
 		'editor.step': true;
 		'editor.undo': true;
@@ -67,7 +67,7 @@ function App() {
 		const animate: TimerHandler = () => {
 			if (isPlaying) {
 				setWaveField(
-					WaveFieldResolver.collapseOne(waveField, tileTypes)
+					WaveFieldResolver.collapseOne(waveField, tileTypes),
 				);
 				timeout = setTimeout(animate, 1000 / config.autogenFps);
 			}
@@ -93,7 +93,7 @@ function App() {
 
 	const save = useCallback(() => {
 		const data = JSON.stringify(
-			Object.values(tileTypes).map(prepareTileTypeForSave)
+			Object.values(tileTypes).map(prepareTileTypeForSave),
 		);
 		const blob = new Blob([data], { type: 'application/json' });
 		const url = URL.createObjectURL(blob);
@@ -104,31 +104,80 @@ function App() {
 		URL.revokeObjectURL(url);
 	}, [tileTypes]);
 
-	const load = useCallback(() => {
-		const input = document.createElement('input');
-		input.type = 'file';
-		input.accept = 'application/json';
-		input.onchange = (e) => {
-			const file = (e.target as HTMLInputElement).files![0];
-			const reader = new FileReader();
-			reader.onload = (e) => {
-				const data = JSON.parse(
-					e.target!.result as string
-				) as ReturnType<typeof prepareTileTypeForSave>[];
-				setTileTypes(
-					data.reduce((types, type) => {
-						const loadedType = createTileTypeFromSave(type);
-						return {
-							...types,
-							[loadedType.id]: loadedType,
-						};
-					}, {} as Record<TileType['id'], TileType>)
-				);
+	const loadJson = useCallback(
+		(json: ReturnType<typeof prepareTileTypeForSave>[]) => {
+			if (Object.keys(waveField).length > 0) {
+				if (
+					!window.confirm(
+						'Are you sure? This will clear your current map',
+					)
+				) {
+					return;
+				}
+			}
+			setTileTypes(
+				json.reduce((types, type) => {
+					const loadedType = createTileTypeFromSave(type);
+					return {
+						...types,
+						[loadedType.id]: loadedType,
+					};
+				}, {} as Record<TileType['id'], TileType>),
+			);
+		},
+		[waveField],
+	);
+
+	const loadJsonLiteral = useCallback(
+		(jsonLiteral: string) => {
+			const data = JSON.parse(jsonLiteral as string) as ReturnType<
+				typeof prepareTileTypeForSave
+			>[];
+
+			loadJson(data);
+		},
+		[loadJson],
+	);
+
+	const load = useCallback(
+		async (
+			options: { jsonLiteral: string } | { url: string } | {} = {},
+		) => {
+			if ('jsonLiteral' in options) {
+				loadJsonLiteral(options.jsonLiteral);
+				return;
+			}
+
+			if ('url' in options) {
+				const response = await fetch(options.url);
+				const data = await response.json();
+
+				try {
+					loadJson(
+						data as ReturnType<typeof prepareTileTypeForSave>[],
+					);
+				} catch (e) {
+					console.error(e);
+					alert('Error loading tileset');
+				}
+				return;
+			}
+
+			const input = document.createElement('input');
+			input.type = 'file';
+			input.accept = 'application/json';
+			input.onchange = (e) => {
+				const file = (e.target as HTMLInputElement).files![0];
+				const reader = new FileReader();
+				reader.onload = (e) => {
+					loadJsonLiteral(e.target!.result as string);
+				};
+				reader.readAsText(file);
 			};
-			reader.readAsText(file);
-		};
-		input.click();
-	}, []);
+			input.click();
+		},
+		[loadJson, loadJsonLiteral],
+	);
 
 	const step = useCallback(() => {
 		const newField = WaveFieldResolver.collapseOne(waveField, tileTypes);
@@ -149,7 +198,7 @@ function App() {
 				} while (
 					Object.values(types).some(
 						// eslint-disable-next-line no-loop-func
-						(type) => type.name === newName
+						(type) => type.name === newName,
 					) &&
 					nameSuffix++
 				);
@@ -277,7 +326,7 @@ function App() {
 														tileType: selectedTile,
 														rotation: 0,
 													},
-													tileTypes
+													tileTypes,
 												);
 
 											setWaveField(newField);
@@ -287,14 +336,14 @@ function App() {
 											WaveFieldResolver.collapse(
 												waveField,
 												{ x, y },
-												tileTypes
+												tileTypes,
 											);
 										setWaveField(newField);
 									} else if (button === 2) {
 										const newField =
 											WaveFieldResolver.deleteTile(
 												waveField,
-												{ x, y }
+												{ x, y },
 											);
 										setWaveField(newField);
 									}
@@ -354,7 +403,7 @@ function App() {
 									onDeleteTileClicked={(id) => {
 										if (
 											window.confirm(
-												'Are you sure you want to delete this tile? It will clear the current map.'
+												'Are you sure you want to delete this tile? It will clear the current map.',
 											)
 										) {
 											setTileTypes((types) => {
@@ -412,7 +461,7 @@ const tileTypeDefaults: () => TileType = () => ({
 });
 
 function createTileTypeFromSave(
-	tileType: Partial<ReturnType<typeof prepareTileTypeForSave>>
+	tileType: Partial<ReturnType<typeof prepareTileTypeForSave>>,
 ): TileType {
 	const { images, ...rest } = tileType;
 	return {

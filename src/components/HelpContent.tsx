@@ -1,10 +1,8 @@
+import { faExternalLink } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import beachImage from '../tiles/beachStraight0.png';
-import exampleFile from '../tiles/example.json';
 import waterImage from '../tiles/water0.png';
 import Typography, * as TG from './Typography';
-
-const blob = new Blob([JSON.stringify(exampleFile)]);
-const exampleFileUrl = URL.createObjectURL(blob);
 
 function HelpContent() {
 	return (
@@ -18,7 +16,7 @@ function HelpContent() {
 							href="https://robertheaton.com/2018/12/17/wavefunction-collapse-algorithm/"
 							target="_blank"
 							rel="noreferrer"
-							title="although I haven't actually read this article yet"
+							title="Wavefunction Collapse Algorithm"
 						>
 							wave collapse algorithm
 						</a>
@@ -154,16 +152,39 @@ function HelpContent() {
 
 								<p>
 									To see a working example with some more
-									tiles,{' '}
-									<a
-										href={exampleFileUrl}
-										download="example.json"
-									>
-										{/* TODO: make this link just open the example */}
-										download the example
-									</a>
-									.
+									tiles, download and load in these examples:
 								</p>
+								<ul>
+									<li>
+										<a
+											href="examples/beach.json"
+											download="beach.json"
+										>
+											{/* TODO: make this link just open the example */}
+											beach.json
+										</a>
+									</li>
+									<li>
+										<a
+											href="examples/codingtrain.json"
+											download="codingtrain.json"
+										>
+											codingtrain.json
+										</a>{' '}
+										based on{' '}
+										<a
+											target="_blank"
+											rel="noreferrer"
+											href="https://youtu.be/rI_y2GAlQFM"
+										>
+											this video
+											<FontAwesomeIcon
+												icon={faExternalLink}
+												size="xs"
+											/>
+										</a>
+									</li>
+								</ul>
 							</dd>
 						</dl>
 					</section>

@@ -1,8 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './components/App';
-import CommandProvider, { KeybindingProvider } from './components/Keybindings';
-import './index.css';
+import CommandProvider, {KeybindingProvider} from './components/Keybindings';
+import './index.scss';
 import reportWebVitals from './reportWebVitals';
 
 const root = ReactDOM.createRoot(

@@ -1,8 +1,8 @@
-import { solid } from '@fortawesome/fontawesome-svg-core/import.macro';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {solid} from '@fortawesome/fontawesome-svg-core/import.macro';
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import classNames from 'classnames';
-import { InputHTMLAttributes, useCallback, useEffect, useState } from 'react';
-import './BufferedInput.css';
+import {InputHTMLAttributes, useCallback, useEffect, useState} from 'react';
+import './BufferedInput.scss';
 
 function BufferedInput({
 	value,

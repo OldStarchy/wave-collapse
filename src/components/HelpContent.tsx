@@ -2,9 +2,12 @@ import { faExternalLink } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import beachImage from '../tiles/beachStraight0.png';
 import waterImage from '../tiles/water0.png';
+import { useCommands } from './Keybindings';
 import Typography, * as TG from './Typography';
 
 function HelpContent() {
+	const { execute } = useCommands();
+
 	return (
 		<div style={{ overflow: 'auto', padding: '0 1rem' }}>
 			<Typography>
@@ -151,16 +154,21 @@ function HelpContent() {
 								</p>
 
 								<p>
-									To see a working example with some more
-									tiles, download and load in these examples:
+									Here are some working examples with some
+									more tiles:
 								</p>
 								<ul>
 									<li>
 										<a
 											href="examples/beach.json"
 											download="beach.json"
+											onClick={(e) => {
+												e.preventDefault();
+												execute('editor.loadTileset', {
+													url: 'examples/beach.json',
+												});
+											}}
 										>
-											{/* TODO: make this link just open the example */}
 											beach.json
 										</a>
 									</li>
@@ -168,6 +176,12 @@ function HelpContent() {
 										<a
 											href="examples/codingtrain.json"
 											download="codingtrain.json"
+											onClick={(e) => {
+												e.preventDefault();
+												execute('editor.loadTileset', {
+													url: 'examples/codingtrain.json',
+												});
+											}}
 										>
 											codingtrain.json
 										</a>{' '}

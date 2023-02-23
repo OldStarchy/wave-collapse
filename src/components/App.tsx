@@ -20,15 +20,15 @@ import TileTypeList from './TileTypeList';
 
 declare global {
 	interface ProvideCommands {
-		'editor.saveTileset': true;
+		'editor.saveTileset': void;
 		'editor.loadTileset': { jsonLiteral: string } | { url: string };
-		'editor.playPause': true;
-		'editor.step': true;
-		'editor.undo': true;
-		'editor.redo': true;
-		'editor.clearMap': true;
-		'editor.new': true;
-		'editor.newTileType': true;
+		'editor.playPause': void;
+		'editor.step': void;
+		'editor.undo': void;
+		'editor.redo': void;
+		'editor.clearMap': void;
+		'editor.new': void;
+		'editor.newTileType': void;
 	}
 }
 

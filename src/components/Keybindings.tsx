@@ -13,20 +13,33 @@ import {
 // This can be used to automatically disable buttons when certain conditions are not met
 
 declare global {
+	/**
+	 * Add commands to this interface to make them available to the command palette
+	 * and keybindings.
+	 *
+	 * eg.
+	 * ```tsx
+	 * declare global {
+	 * 	interface ProvideCommands {
+	 * 		'command.name': never, // no options
+	 * 		'command.alert': { message: string }, // with options
+	 * 	}
+	 * }
+	 * ```
+	 */
 	interface ProvideCommands {}
 }
 
-interface Command<TOptions = {}> {
+interface Command<TOptions = never> {
 	id: CommandName;
 	title: string;
 	execute: (options?: TOptions) => void;
 }
+
 type CommandOptions<T> = T extends Command<infer TOptions> ? TOptions : never;
 
 type Commands = {
-	[name in CommandName]?: Command<
-		ProvideCommands[name] extends true ? {} : {} & ProvideCommands[name]
-	>;
+	[name in CommandName]?: Command<ProvideCommands[name]>;
 };
 
 export type CommandName = keyof ProvideCommands extends never
@@ -35,7 +48,33 @@ export type CommandName = keyof ProvideCommands extends never
 
 const CommandsContext = createContext<{
 	commands: Commands;
+	/**
+	 * Registers a command. Each command should only be registered once.
+	 *
+	 * eg.
+	 * ```tsx
+	 * register({
+	 * 	id: 'command.alert',
+	 * 	title: 'Alert',
+	 * 	execute: ({message}: {message: string}) => {
+	 * 		alert(message);
+	 * 	},
+	 * });
+	 * ```
+	 */
 	register: (command: Command) => void;
+	/**
+	 * Executes a command by name. If the command has options, it may be passed
+	 * as the second argument.
+	 *
+	 * eg.
+	 * ```tsx
+	 * execute('command.name');
+	 * execute('command.alert', { message: 'Hello world!' });
+	 * ```
+	 *
+	 * see {@link ProvideCommands} for more information.
+	 */
 	execute: <TName extends CommandName>(
 		command: TName,
 		options?: CommandOptions<Commands[TName]>,

@@ -30,7 +30,7 @@ declare global {
 	interface ProvideCommands {}
 }
 
-interface Command<TOptions = never> {
+export interface Command<TOptions = never> {
 	id: CommandName;
 	title: string;
 	execute: (options?: TOptions) => void;
@@ -45,6 +45,12 @@ type Commands = {
 export type CommandName = keyof ProvideCommands extends never
 	? string
 	: keyof ProvideCommands;
+
+type Register = (command: Command) => void;
+type Execute = <TName extends CommandName>(
+	command: TName,
+	options?: CommandOptions<Commands[TName]>,
+) => void;
 
 const CommandsContext = createContext<{
 	commands: Commands;
@@ -62,7 +68,7 @@ const CommandsContext = createContext<{
 	 * });
 	 * ```
 	 */
-	register: (command: Command) => void;
+	register: Register;
 	/**
 	 * Executes a command by name. If the command has options, it may be passed
 	 * as the second argument.
@@ -75,10 +81,7 @@ const CommandsContext = createContext<{
 	 *
 	 * see {@link ProvideCommands} for more information.
 	 */
-	execute: <TName extends CommandName>(
-		command: TName,
-		options?: CommandOptions<Commands[TName]>,
-	) => void;
+	execute: Execute;
 }>({
 	commands: {},
 	register: () => {},
@@ -95,12 +98,14 @@ export default function CommandProvider({
 	const [commands, setCommands] = useState<Commands>({});
 
 	const register = useCallback((command: Command) => {
-		setCommands(
-			(prevCommands): Commands => ({
-				...prevCommands,
-				[command.id]: command,
-			}),
-		);
+		setCommands((prevCommands): Commands => {
+			if (prevCommands[command.id] !== command)
+				return {
+					...prevCommands,
+					[command.id]: command,
+				};
+			return prevCommands;
+		});
 	}, []);
 
 	const execute = useCallback(
@@ -123,17 +128,29 @@ export default function CommandProvider({
 	);
 }
 
+/**
+ * Provides access to the commands API. This includes the {@link Register} and {@link Execute} functions as well as
+ * the list of registered commands. If keybindings are required, use {@link useCommandsHelper} instead.
+ */
 export function useCommands() {
 	return useContext(CommandsContext);
 }
 
+/**
+ * Combines the {@link CommandProvider} and {@link KeybindingProvider} into a single context, and adds a `bindings` prop
+ * to the {@link Register} function that can be used to register keybindings.
+ */
 export function useCommandsHelper() {
-	const commandContext = useContext(CommandsContext);
+	const {
+		register: registerCommand,
+		commands,
+		execute,
+	} = useContext(CommandsContext);
 	const { bindings, bind } = useContext(KeybindingContext);
 
 	const register = useCallback(
 		(command: { bindings?: string[] } & Command) => {
-			commandContext.register(command);
+			registerCommand(command);
 
 			command.bindings?.forEach((binding) => {
 				if (isKeyChord(binding)) {
@@ -143,7 +160,7 @@ export function useCommandsHelper() {
 				}
 			});
 		},
-		[commandContext, bind],
+		[registerCommand, bind],
 	);
 
 	const findCommand = useCallback(
@@ -156,7 +173,7 @@ export function useCommandsHelper() {
 					bindings: KeyChord[];
 			  }
 			| undefined => {
-			const cmd = commandContext.commands[command];
+			const cmd = commands[command];
 
 			if (cmd) {
 				const binding = Object.entries(bindings)
@@ -168,12 +185,12 @@ export function useCommandsHelper() {
 
 			return undefined;
 		},
-		[bindings, commandContext],
+		[bindings, commands],
 	);
 
 	return useMemo(
-		() => ({ ...commandContext, register, findCommand }),
-		[commandContext, register, findCommand],
+		() => ({ commands, execute, register, findCommand }),
+		[commands, execute, register, findCommand],
 	);
 }
 

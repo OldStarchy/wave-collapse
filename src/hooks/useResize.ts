@@ -1,20 +1,34 @@
-import { RefObject, useEffect, useMemo } from 'react';
+import { RefObject, useEffect, useMemo, useState } from 'react';
 
 export function useResize(
 	element: RefObject<HTMLElement>,
-	callback: (entries: ResizeObserverEntry[]) => void,
-) {
+): { width: number; height: number } | undefined {
+	const [size, setSize] = useState<{ width: number; height: number }>();
+
 	const resizeObserver = useMemo(() => {
 		if (typeof ResizeObserver !== 'undefined') {
 			return new ResizeObserver((entries: ResizeObserverEntry[]) => {
-				callback(entries);
+				const entry = entries[0];
+				const { width, height } = entry.contentRect;
+
+				setSize((size) => {
+					if (size && size.width === width && size.height === height)
+						return size;
+
+					return { width, height };
+				});
 			});
 		}
-	}, [callback]);
+	}, []);
 
 	useEffect(() => {
 		if (element.current && resizeObserver) {
 			const el = element.current;
+
+			setSize({
+				width: el.clientWidth,
+				height: el.clientHeight,
+			});
 
 			resizeObserver.observe(el);
 			return () => {
@@ -22,4 +36,6 @@ export function useResize(
 			};
 		}
 	}, [resizeObserver, element]);
+
+	return size;
 }

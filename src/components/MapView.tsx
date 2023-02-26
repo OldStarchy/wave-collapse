@@ -1,18 +1,21 @@
 import { solid } from '@fortawesome/fontawesome-svg-core/import.macro';
 import classNames from 'classnames';
 import {
-	createRef,
 	useCallback,
 	useContext,
 	useEffect,
 	useMemo,
+	useRef,
 	useState,
 } from 'react';
 import ConfigContext from '../context/ConfigContext';
 import { useResize } from '../hooks/useResize';
+import TileType from '../model/TileType';
 import WaveFieldResolver, { TileSet, WaveField } from '../WaveField';
 import FontAwesomeButton from './FontAwesomeButton';
 import BufferedInput from './input/BufferedInput';
+import { useCommands } from './Keybindings';
+import { MapControls } from './MapControls';
 import './MapView.scss';
 
 const TILE_SIZE = 32;
@@ -50,6 +53,7 @@ function MapView({
 	renderUnknownTiles,
 	mapHistory,
 	tileset,
+	selectedTile,
 }: {
 	className?: string;
 	waveField: WaveField;
@@ -60,6 +64,7 @@ function MapView({
 	) => void;
 	settings?: Partial<MapViewSettings>;
 	tileset: TileSet;
+	selectedTile: TileType | null;
 
 	isPlaying: boolean;
 	renderUnknownTiles: boolean;
@@ -75,70 +80,54 @@ function MapView({
 		() => ({ ...defaultSettings, ...(_settings ?? {}) }),
 		[_settings],
 	);
-	const mapView = createRef<HTMLCanvasElement>();
+	const canvasRef = useRef<HTMLCanvasElement>(null);
+	const canvasSize = useResize(canvasRef);
+	const [wMousePosition, setWMousePosition] = useState<{
+		x: number;
+		y: number;
+	}>();
+	const { execute } = useCommands();
 
 	const [config, setConfig] = useContext(ConfigContext);
 
-	const [viewportTransform, setViewportTransform] = useState<DOMMatrix>(
-		new DOMMatrix(),
-	);
-
-	const [visualViewportTransform, setVisualViewportTransform] =
-		useState<DOMMatrix>(new DOMMatrix());
-
-	const [mousePositionTransformed, setMousePositionTransformed] = useState<
-		{ x: number; y: number } | undefined
-	>(undefined);
-
-	const [dragStart, setDragStart] = useState<
-		| undefined
-		| {
-				x: number;
-				y: number;
-		  }
-	>(undefined);
+	const [transform, setTransform] = useState<DOMMatrix>(new DOMMatrix());
 
 	//TODO: instead of pulling variables from css, try to inject them into css from a ThemeProvider component
 	// and use a useTheme consumer hook here
 	const cssVar = useCallback(
 		(name: string) => {
-			return getComputedStyle(mapView.current!).getPropertyValue(name);
+			if (!canvasRef.current) return '';
+			return getComputedStyle(canvasRef.current).getPropertyValue(name);
 		},
-		[mapView],
+		[canvasRef],
 	);
 
 	const fixCanvasSize = useCallback(() => {
-		if (!mapView.current) return;
+		if (!canvasRef.current) return;
 
 		const oldCenter = {
-			x: mapView.current.width / 2,
-			y: mapView.current.height / 2,
+			x: canvasRef.current.width / 2,
+			y: canvasRef.current.height / 2,
 		};
 		const newCenter = {
-			x: mapView.current.clientWidth / 2,
-			y: mapView.current.clientHeight / 2,
+			x: canvasRef.current.clientWidth / 2,
+			y: canvasRef.current.clientHeight / 2,
 		};
 
-		mapView.current.width = mapView.current.clientWidth;
-		mapView.current.height = mapView.current.clientHeight;
+		canvasRef.current.width = canvasRef.current.clientWidth;
+		canvasRef.current.height = canvasRef.current.clientHeight;
 
-		setViewportTransform(
-			viewportTransform.translate(
+		setTransform((transform) =>
+			transform.translate(
 				newCenter.x - oldCenter.x,
 				newCenter.y - oldCenter.y,
 			),
 		);
-		setVisualViewportTransform(
-			visualViewportTransform.translate(
-				newCenter.x - oldCenter.x,
-				newCenter.y - oldCenter.y,
-			),
-		);
-	}, [mapView, viewportTransform, visualViewportTransform]);
+	}, [canvasRef.current]);
 
 	const draw = useCallback(() => {
-		const canvas = mapView.current!;
-		const ctx = mapView.current?.getContext('2d');
+		const canvas = canvasRef.current!;
+		const ctx = canvasRef.current?.getContext('2d');
 		if (!ctx) return;
 
 		ctx.imageSmoothingEnabled = false;
@@ -147,17 +136,9 @@ function MapView({
 		ctx.fillRect(0, 0, canvas.width, canvas.height);
 
 		ctx.save();
+		ctx.setTransform(transform);
 
-		ctx.transform(
-			visualViewportTransform.a,
-			visualViewportTransform.b,
-			visualViewportTransform.c,
-			visualViewportTransform.d,
-			visualViewportTransform.e,
-			visualViewportTransform.f,
-		);
-
-		const inverseMatrix = ctx.getTransform().inverse();
+		const inverseMatrix = transform.inverse();
 
 		const topLeft = inverseMatrix.transformPoint({ x: 0, y: 0 });
 		const bottomRight = inverseMatrix.transformPoint({
@@ -261,12 +242,9 @@ function MapView({
 		// console.log(renderedTiles);
 
 		//highlight tile under mouse
-		if (mousePositionTransformed) {
-			//TODO: Track mouse position outside of the draw loop
-			// (but also keep track of the(inverse) transform so we know where it is on the map too)
-
-			const tileX = Math.floor(mousePositionTransformed.x / TILE_SIZE);
-			const tileY = Math.floor(mousePositionTransformed.y / TILE_SIZE);
+		if (wMousePosition) {
+			const tileX = Math.floor(wMousePosition.x / TILE_SIZE);
+			const tileY = Math.floor(wMousePosition.y / TILE_SIZE);
 
 			ctx.strokeStyle = cssVar('--color-grid');
 			ctx.fillStyle = cssVar('--color-highlight-background');
@@ -280,235 +258,117 @@ function MapView({
 			);
 			ctx.stroke();
 			ctx.fill();
-		} else {
-			setMousePositionTransformed(undefined);
 		}
 
 		ctx.restore();
 	}, [
 		cssVar,
-		mapView,
-		mousePositionTransformed,
+		canvasRef,
+		wMousePosition,
 		renderUnknownTiles,
 		settings.drawGrid,
 		settings.drawOrigin,
 		tileset,
-		visualViewportTransform.a,
-		visualViewportTransform.b,
-		visualViewportTransform.c,
-		visualViewportTransform.d,
-		visualViewportTransform.e,
-		visualViewportTransform.f,
+		transform,
 		waveField,
 	]);
 
-	const onResize = useCallback(() => {
+	useEffect(() => {
 		fixCanvasSize();
 		draw();
-	}, [draw, fixCanvasSize]);
-
-	useResize(mapView, onResize);
-
-	//animate zoom
-	useEffect(() => {
-		if (
-			visualViewportTransform.a === viewportTransform.a &&
-			visualViewportTransform.b === viewportTransform.b &&
-			visualViewportTransform.c === viewportTransform.c &&
-			visualViewportTransform.d === viewportTransform.d &&
-			visualViewportTransform.e === viewportTransform.e &&
-			visualViewportTransform.f === viewportTransform.f
-		) {
-			return;
-		}
-
-		const start = Date.now();
-		const duration = 200;
-		const startTransform = visualViewportTransform;
-		const endTransform = viewportTransform;
-
-		let stop = false;
-
-		const animate = () => {
-			if (stop) return;
-
-			const now = Date.now();
-			const progress = (now - start) / duration;
-
-			if (progress > 1) {
-				setVisualViewportTransform(endTransform);
-				return;
-			}
-
-			const interpolatedTransform = new DOMMatrix([
-				startTransform.a +
-					(endTransform.a - startTransform.a) * progress,
-				startTransform.b +
-					(endTransform.b - startTransform.b) * progress,
-				startTransform.c +
-					(endTransform.c - startTransform.c) * progress,
-				startTransform.d +
-					(endTransform.d - startTransform.d) * progress,
-				startTransform.e +
-					(endTransform.e - startTransform.e) * progress,
-				startTransform.f +
-					(endTransform.f - startTransform.f) * progress,
-			]);
-
-			setVisualViewportTransform(interpolatedTransform);
-
-			requestAnimationFrame(animate);
-		};
-
-		animate();
-
-		return () => {
-			stop = true;
-		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [viewportTransform]);
+	}, [draw, fixCanvasSize, canvasSize]);
 
 	useEffect(() => {
 		draw();
-	}, [draw, viewportTransform, waveField, settings]);
+	}, [draw, transform, waveField, settings]);
 
 	return (
-		<div
-			className={classNames('MapView', className)}
-			tabIndex={-1}
-			onKeyDown={(e) => {
-				switch (e.key) {
-					case TRANSLATE_CONTROLS.up:
-						setViewportTransform(
-							viewportTransform.translate(
-								0,
-								TILE_SIZE / viewportTransform.a,
-							),
-						);
-						break;
-					case TRANSLATE_CONTROLS.left:
-						setViewportTransform(
-							viewportTransform.translate(
-								TILE_SIZE / viewportTransform.a,
-								0,
-							),
-						);
-						break;
-					case TRANSLATE_CONTROLS.down:
-						setViewportTransform(
-							viewportTransform.translate(
-								0,
-								-TILE_SIZE / viewportTransform.a,
-							),
-						);
-						break;
-					case TRANSLATE_CONTROLS.right:
-						setViewportTransform(
-							viewportTransform.translate(
-								-TILE_SIZE / viewportTransform.a,
-								0,
-							),
-						);
-						break;
-				}
-			}}
-		>
-			<canvas
-				ref={mapView}
-				className="MapView__Canvas"
-				onWheel={(e) => {
-					const realMouse = {
-						x: e.nativeEvent.offsetX,
-						y: e.nativeEvent.offsetY,
-					};
-
-					const mouse = viewportTransform
-						.inverse()
-						.transformPoint(realMouse);
-
-					const currentZoom = viewportTransform.a;
-					let scale = 2 ** (ZOOM_FACTOR * (-e.deltaY / 100));
-					const newZoom = currentZoom * scale;
-
-					if (newZoom < MIN_ZOOM) {
-						scale *= MIN_ZOOM / newZoom;
-					} else if (newZoom > MAX_ZOOM) {
-						scale *= MAX_ZOOM / newZoom;
-					}
-
-					const newTransform = viewportTransform
-						.translate(mouse.x, mouse.y)
-						.scale(scale)
-						.translate(-mouse.x, -mouse.y);
-
-					setViewportTransform(newTransform);
+		<div className={classNames('MapView', className)}>
+			<MapControls
+				transform={transform}
+				onTransformChange={(t) => {
+					if (!selectedTile) setTransform(t);
 				}}
-				onMouseDown={(e) => {
-					setDragStart(mousePositionTransformed);
-				}}
-				onMouseMove={(e) => {
-					const mousePos = {
-						x: e.nativeEvent.offsetX,
-						y: e.nativeEvent.offsetY,
-					};
-					const mousePosTransformed = viewportTransform
-						.inverse()
-						.transformPoint(mousePos);
+				onMouseMove={setWMousePosition}
+			>
+				<canvas
+					ref={canvasRef}
+					className="MapView__Canvas"
+					tabIndex={0}
+					onKeyDown={(e) => {
+						switch (e.key) {
+							case TRANSLATE_CONTROLS.up:
+								setTransform((transform) =>
+									transform.translate(
+										0,
+										TILE_SIZE / transform.a,
+									),
+								);
+								break;
+							case TRANSLATE_CONTROLS.left:
+								setTransform((transform) =>
+									transform.translate(
+										TILE_SIZE / transform.a,
+										0,
+									),
+								);
+								break;
+							case TRANSLATE_CONTROLS.down:
+								setTransform((transform) =>
+									transform.translate(
+										0,
+										-TILE_SIZE / transform.a,
+									),
+								);
+								break;
+							case TRANSLATE_CONTROLS.right:
+								setTransform((transform) =>
+									transform.translate(
+										-TILE_SIZE / transform.a,
+										0,
+									),
+								);
+								break;
+						}
+					}}
+					onAuxClick={(e) => {
+						if (wMousePosition) {
+							const tileX = Math.floor(
+								wMousePosition.x / TILE_SIZE,
+							);
+							const tileY = Math.floor(
+								wMousePosition.y / TILE_SIZE,
+							);
+							onClickPosition(tileX, tileY, e.button);
+						}
+					}}
+					onContextMenu={(e) => {
+						if (e.shiftKey) return;
 
-					setMousePositionTransformed(mousePosTransformed);
-
-					if (dragStart) {
-						const newTransform = viewportTransform.translate(
-							mousePosTransformed.x - dragStart.x,
-							mousePosTransformed.y - dragStart.y,
-						);
-						setViewportTransform(newTransform);
-						setVisualViewportTransform(newTransform);
-					}
-				}}
-				onMouseUp={(e) => {
-					setDragStart(undefined);
-				}}
-				onAuxClick={(e) => {
-					if (mousePositionTransformed) {
-						const tileX = Math.floor(
-							mousePositionTransformed.x / TILE_SIZE,
-						);
-						const tileY = Math.floor(
-							mousePositionTransformed.y / TILE_SIZE,
-						);
-						onClickPosition(tileX, tileY, e.button);
-					}
-				}}
-				onContextMenu={(e) => {
-					if (e.shiftKey) return;
-
-					e.preventDefault();
-					if (mousePositionTransformed) {
-						const tileX = Math.floor(
-							mousePositionTransformed.x / TILE_SIZE,
-						);
-						const tileY = Math.floor(
-							mousePositionTransformed.y / TILE_SIZE,
-						);
-						onClickPosition(tileX, tileY, e.button);
-					}
-				}}
-				onClick={(e) => {
-					if (mousePositionTransformed) {
-						const tileX = Math.floor(
-							mousePositionTransformed.x / TILE_SIZE,
-						);
-						const tileY = Math.floor(
-							mousePositionTransformed.y / TILE_SIZE,
-						);
-						onClickPosition(tileX, tileY, e.button);
-					}
-				}}
-				onMouseLeave={() => {
-					setDragStart(undefined);
-				}}
-			></canvas>
+						e.preventDefault();
+						if (wMousePosition) {
+							const tileX = Math.floor(
+								wMousePosition.x / TILE_SIZE,
+							);
+							const tileY = Math.floor(
+								wMousePosition.y / TILE_SIZE,
+							);
+							onClickPosition(tileX, tileY, e.button);
+						}
+					}}
+					onClick={(e) => {
+						if (wMousePosition) {
+							const tileX = Math.floor(
+								wMousePosition.x / TILE_SIZE,
+							);
+							const tileY = Math.floor(
+								wMousePosition.y / TILE_SIZE,
+							);
+							onClickPosition(tileX, tileY, e.button);
+						}
+					}}
+				/>
+			</MapControls>
 			<div className="MapView__Controls MapView__Controls--Bottom">
 				{config.showGui && (
 					<>
@@ -631,54 +491,63 @@ function MapView({
 							className="MapView__Control"
 							icon={solid('plus')}
 							onClick={() => {
-								const center = viewportTransform
+								const center = transform
 									.inverse()
 									.transformPoint({
-										x: (mapView?.current?.width ?? 0) / 2,
-										y: (mapView?.current?.height ?? 0) / 2,
+										x: (canvasRef?.current?.width ?? 0) / 2,
+										y:
+											(canvasRef?.current?.height ?? 0) /
+											2,
 									});
-								setViewportTransform(
-									viewportTransform
+								setTransform((transform) =>
+									transform
 										.translate(center.x, center.y)
 										.scale(2 ** ZOOM_FACTOR)
 										.translate(-center.x, -center.y),
 								);
 							}}
-							disabled={viewportTransform.a >= MAX_ZOOM}
+							disabled={transform.a >= MAX_ZOOM}
 							title="Zoom in"
 						/>
 						<FontAwesomeButton
 							className="MapView__Control"
 							icon={solid('minus')}
 							onClick={() => {
-								const center = viewportTransform
+								const center = transform
 									.inverse()
 									.transformPoint({
-										x: (mapView?.current?.width ?? 0) / 2,
-										y: (mapView?.current?.height ?? 0) / 2,
+										x: (canvasRef?.current?.width ?? 0) / 2,
+										y:
+											(canvasRef?.current?.height ?? 0) /
+											2,
 									});
-								setViewportTransform(
-									viewportTransform
+								setTransform((transform) =>
+									transform
 										.translate(center.x, center.y)
 										.scale(2 ** -ZOOM_FACTOR)
 										.translate(-center.x, -center.y),
 								);
 							}}
-							disabled={viewportTransform.a <= MIN_ZOOM}
+							disabled={transform.a <= MIN_ZOOM}
 							title="Zoom out"
 						/>
 						<FontAwesomeButton
 							className="MapView__Control"
 							icon={solid('sync-alt')}
 							onClick={() => {
-								setViewportTransform(
-									viewportTransform.scale(
-										1 / viewportTransform.a,
-									),
+								setTransform((transform) =>
+									transform.scale(1 / transform.a),
 								);
 							}}
-							disabled={viewportTransform.a === 1}
+							disabled={transform.a === 1}
 							title="Reset zoom"
+						/>
+
+						<FontAwesomeButton
+							className="MapView__Control"
+							icon={solid('ban')}
+							command="editor.deselectTileType"
+							disabled={!selectedTile}
 						/>
 					</div>
 				</>

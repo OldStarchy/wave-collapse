@@ -29,6 +29,7 @@ declare global {
 		'editor.clearMap': void;
 		'editor.new': void;
 		'editor.newTileType': void;
+		'editor.deselectTileType': void;
 	}
 }
 
@@ -294,6 +295,13 @@ function App() {
 			// Chrome doesn't allow overriding ctrl+n, ctrl+shift+n, ctrl+t, ctrl+shift+t, and probably some others
 			// bindings: ['ctrl+n'],
 		});
+
+		register({
+			id: 'editor.deselectTileType',
+			title: 'Deselect tile type',
+			execute: () => setSelectedTileType(undefined),
+			bindings: ['esc'],
+		});
 	}, [clear, save, load, mapHistory, step, newTileType, register]);
 
 	return (
@@ -320,6 +328,7 @@ function App() {
 							<MapView
 								waveField={waveField}
 								tileset={tileTypes}
+								selectedTile={selectedTile}
 								onClickPosition={(x, y, button) => {
 									if (button === 0) {
 										if (selectedTile) {

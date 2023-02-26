@@ -14,7 +14,6 @@ import TileType from '../model/TileType';
 import WaveFieldResolver, { TileSet, WaveField } from '../WaveField';
 import FontAwesomeButton from './FontAwesomeButton';
 import BufferedInput from './input/BufferedInput';
-import { useCommands } from './Keybindings';
 import { MapControls } from './MapControls';
 import './MapView.scss';
 
@@ -86,7 +85,6 @@ function MapView({
 		x: number;
 		y: number;
 	}>();
-	const { execute } = useCommands();
 
 	const [config, setConfig] = useContext(ConfigContext);
 
@@ -123,7 +121,7 @@ function MapView({
 				newCenter.y - oldCenter.y,
 			),
 		);
-	}, [canvasRef.current]);
+	}, [canvasRef]);
 
 	const draw = useCallback(() => {
 		const canvas = canvasRef.current!;

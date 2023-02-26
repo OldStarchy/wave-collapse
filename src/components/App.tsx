@@ -149,7 +149,12 @@ function App() {
 			}
 
 			if ('url' in options) {
-				const response = await fetch(options.url);
+				const response = await fetch(options.url, {
+					headers: {
+						'Content-Type': 'application/json',
+						Accept: 'application/json',
+					},
+				});
 				const data = await response.json();
 
 				try {

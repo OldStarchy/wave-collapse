@@ -22,7 +22,7 @@ declare global {
 
 function AppRoot() {
 	const { register } = useCommandsHelper();
-	const [isTestMode, setIsTestMode] = useState(true);
+	const [isTestMode, setIsTestMode] = useState(false);
 
 	const toggleTestModeCommand = useMemo(
 		(): Command & { bindings: string[] } => ({

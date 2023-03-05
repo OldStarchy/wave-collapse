@@ -1,10 +1,7 @@
-namespace WaveCollapse {
-	interface TileSuperstate {
-		x: number;
-		y: number;
-		state: TileState | null;
-	}
+import { Cell, Grid2d } from './Grid2d';
+import { Logger } from './Logger';
 
+namespace WaveCollapse {
 	interface TileState {
 		type: string;
 	}
@@ -14,66 +11,9 @@ namespace WaveCollapse {
 		y: number;
 	}
 
-	const log = {
-		infos: [] as any[][],
-		info(...args: any[]) {
-			this.infos.push(args);
-		},
-		flushInfos() {
-			this.infos.forEach((args) => {
-				console.info(...args);
-			});
-			this.infos = [];
-		},
-		clearInfos() {
-			this.infos = [];
-		},
-	};
+	const log = new Logger();
 
-	class Board {
-		constructor(public tiles: Readonly<TileSuperstate[]> = []) {}
-
-		get(x: number, y: number): TileSuperstate {
-			const tile = this.tiles.find(
-				(tile) => tile.x === x && tile.y === y
-			);
-			if (tile) {
-				return tile;
-			}
-			return {
-				x,
-				y,
-				state: null,
-			};
-		}
-		set(x: number, y: number, tile: TileSuperstate['state']): Board {
-			const tiles = this.tiles.map((tile) => {
-				return {
-					...tile,
-					state: tile.state && {
-						...tile.state,
-					},
-				};
-			});
-
-			const existingTile = tiles.find(
-				(tile) => tile.x === x && tile.y === y
-			);
-			if (existingTile) {
-				existingTile.state = tile;
-			}
-
-			tiles.push({
-				x,
-				y,
-				state: tile,
-			});
-
-			return new Board(tiles);
-		}
-	}
-
-	let map: Board = new Board();
+	let map = new Grid2d<TileState>(null);
 
 	map = map.set(0, 0, {
 		type: 'ocean',
@@ -85,7 +25,10 @@ namespace WaveCollapse {
 			public readonly asciiChar: string
 		) {}
 
-		abstract chanceOfBeingAt(map: Board, location: Location): number;
+		abstract chanceOfBeingAt(
+			map: Grid2d<TileState>,
+			location: Location
+		): number;
 	}
 
 	const tileTypes: TileType[] = [];
@@ -99,7 +42,7 @@ namespace WaveCollapse {
 			super(type, asciiChar);
 		}
 
-		chanceOfBeingAt(map: Board, { x, y }: Location): number {
+		chanceOfBeingAt(map: Grid2d<TileState>, { x, y }: Location): number {
 			const neighbours = [
 				map.get(x - 1, y),
 				map.get(x + 1, y),
@@ -110,17 +53,15 @@ namespace WaveCollapse {
 			if (
 				neighbours
 					.filter(
-						(
-							neighbour
-						): neighbour is TileSuperstate & { state: TileState } =>
-							!!neighbour.state
+						(neighbour): neighbour is Cell<TileState> =>
+							!!neighbour.data
 					)
 					.some((neighbour) => {
 						const weight =
-							this.adjacencyWeights[neighbour.state.type] ?? 0;
+							this.adjacencyWeights[neighbour.data.type] ?? 0;
 						if (weight === 0) {
 							log.info(
-								`${this.type} tile can't be next to ${neighbour.state?.type} tile`
+								`${this.type} tile can't be next to ${neighbour.data?.type} tile`
 							);
 						}
 						return weight === 0;
@@ -132,12 +73,12 @@ namespace WaveCollapse {
 			return neighbours
 				.map((neighbour) => {
 					const weight =
-						(neighbour.state &&
-							this.adjacencyWeights[neighbour.state.type]) ??
+						(neighbour.data &&
+							this.adjacencyWeights[neighbour.data.type]) ??
 						1;
 					if (weight === 0) {
 						log.info(
-							`${this.type} tile can't be next to ${neighbour.state?.type} tile`
+							`${this.type} tile can't be next to ${neighbour.data?.type} tile`
 						);
 					}
 					return weight;
@@ -148,7 +89,7 @@ namespace WaveCollapse {
 		}
 	}
 	class CoastType extends TileType {
-		chanceOfBeingAt(map: Board, { x, y }: Location): number {
+		chanceOfBeingAt(map: Grid2d<TileState>, { x, y }: Location): number {
 			const neighbours = [
 				map.get(x - 1, y),
 				map.get(x + 1, y),
@@ -157,16 +98,16 @@ namespace WaveCollapse {
 			];
 
 			const oceanNeighbours = neighbours.filter(
-				(neighbour) => neighbour.state?.type === 'ocean'
+				(neighbour) => neighbour.data?.type === 'ocean'
 			);
 			const grassNeighbours = neighbours.filter(
-				(neighbour) => neighbour.state?.type === 'grass'
+				(neighbour) => neighbour.data?.type === 'grass'
 			);
 			const coastNeighbours = neighbours.filter(
-				(neighbour) => neighbour.state?.type === 'coast'
+				(neighbour) => neighbour.data?.type === 'coast'
 			);
 			const nullNeighbours = neighbours.filter(
-				(neighbour) => !neighbour.state
+				(neighbour) => !neighbour.data
 			);
 
 			// no more than 2 coast tiles
@@ -240,8 +181,8 @@ namespace WaveCollapse {
 		})
 	);
 
-	function validate(map: Board, { x, y }: Location): boolean {
-		const type = map.get(x, y).state?.type;
+	function validate(map: Grid2d<TileState>, { x, y }: Location): boolean {
+		const type = map.get(x, y).data?.type;
 		if (!type) {
 			return true;
 		}
@@ -258,8 +199,8 @@ namespace WaveCollapse {
 		return typeObject.chanceOfBeingAt(map, { x, y }) > 0;
 	}
 
-	function validateMap(map: Board): boolean {
-		for (const { x, y } of map.tiles) {
+	function validateMap(map: Grid2d<TileState>): boolean {
+		for (const { x, y } of map.cells) {
 			if (!validate(map, { x, y })) {
 				log.info(`map is invalid at ${x}, ${y}`);
 				return false;
@@ -270,10 +211,10 @@ namespace WaveCollapse {
 	}
 
 	function collapseTile(
-		map: Board,
+		map: Grid2d<TileState>,
 		{ x, y }: Location,
 		tries: string[]
-	): { map: Board; tries: string[]; canTryOthers: boolean } {
+	): { map: Grid2d<TileState>; tries: string[]; canTryOthers: boolean } {
 		log.info();
 		const possibilities = tileTypes
 			.map((type) => {
@@ -341,8 +282,8 @@ namespace WaveCollapse {
 		return { map, tries, canTryOthers: false };
 	}
 
-	function renderMap(map: Board) {
-		const tiles = map.tiles;
+	function renderMap(map: Grid2d<TileState>) {
+		const tiles = map.cells;
 		const minX = Math.min(...tiles.map((tile) => tile.x));
 		const minY = Math.min(...tiles.map((tile) => tile.y));
 		const maxX = Math.max(...tiles.map((tile) => tile.x));
@@ -358,9 +299,9 @@ namespace WaveCollapse {
 		}
 
 		for (const tile of tiles) {
-			if (tile.state) {
+			if (tile.data) {
 				const typeObject = tileTypes.find(
-					(typeObject) => typeObject.type === tile.state!.type
+					(typeObject) => typeObject.type === tile.data!.type
 				);
 				grid[tile.y][tile.x] = typeObject?.asciiChar || '⬛';
 			}
@@ -379,7 +320,7 @@ namespace WaveCollapse {
 	renderMap(map);
 
 	interface HistoryNode {
-		map: Board;
+		map: Grid2d<TileState>;
 		x: number;
 		y: number;
 		tries: string[];
@@ -395,7 +336,7 @@ namespace WaveCollapse {
 
 	loops: for (let y = 0; y < 20; y++) {
 		for (let x = 0; x < 70; x++) {
-			if (!map.get(x, y).state) {
+			if (!map.get(x, y).data) {
 				if (history.x !== x || history.y !== y) {
 					history = {
 						map,

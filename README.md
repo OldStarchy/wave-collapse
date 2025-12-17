@@ -1,6 +1,14 @@
-# Getting Started with Create React App
+# Wave Collapse
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+
+## Live Demo
+
+The app is automatically deployed to GitHub Pages: [https://oldstarchy.github.io/wave-collapse/](https://oldstarchy.github.io/wave-collapse/)
+
+## Deployment
+
+The project is configured to automatically deploy to GitHub Pages when changes are pushed to the `main` branch. The deployment is handled by a GitHub Actions workflow (`.github/workflows/gh-pages.yml`).
 
 ## Available Scripts
 

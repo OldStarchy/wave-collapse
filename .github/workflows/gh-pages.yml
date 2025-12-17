@@ -1,5 +1,5 @@
-# Sample workflow for building and deploying a Jekyll site to GitHub Pages
-name: Deploy Jekyll with GitHub Pages dependencies preinstalled
+# Workflow for building and deploying a React app to GitHub Pages
+name: Deploy React App to GitHub Pages
 
 on:
   # Runs on pushes targeting the default branch
@@ -26,17 +26,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'yarn'
       - name: Setup Pages
-        uses: actions/configure-pages@v2
-      - name: Install
-        run: yarn install
+        uses: actions/configure-pages@v4
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
       - name: Build
         run: yarn build
         env:
           NODE_ENV: production
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-pages-artifact@v3
         with:
           path: build/
 
@@ -50,4 +55,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v1
+        uses: actions/deploy-pages@v4
